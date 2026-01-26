@@ -1,9 +1,15 @@
+import logging
+
 from sqlalchemy.orm import Session
 
 from app.core.security import get_password_hash, verify_password
 from app.models.company import Company
 from app.models.user import User
 from app.schemas.user import UserCreate
+
+logger = logging.getLogger(__name__)
+
+DEFAULT_ROLE = "operator"
 
 
 def register_user(db: Session, user_in: UserCreate) -> User:
@@ -13,15 +19,17 @@ def register_user(db: Session, user_in: UserCreate) -> User:
         db.add(company)
         db.commit()
         db.refresh(company)
+        logger.info("Created company", extra={"company_id": company.id})
     user = User(
         email=user_in.email,
         hashed_password=get_password_hash(user_in.password),
-        role=user_in.role,
+        role=DEFAULT_ROLE,
         company_id=company.id,
     )
     db.add(user)
     db.commit()
     db.refresh(user)
+    logger.info("Registered user", extra={"user_id": user.id, "company_id": company.id})
     return user
 
 

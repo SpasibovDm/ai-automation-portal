@@ -5,7 +5,6 @@ from pydantic import BaseModel, EmailStr
 
 class UserBase(BaseModel):
     email: EmailStr
-    role: str = "operator"
 
 
 class UserCreate(UserBase):
@@ -16,7 +15,12 @@ class UserCreate(UserBase):
 class UserRead(UserBase):
     id: int
     company_id: int
+    role: str
     created_at: datetime
 
     class Config:
         orm_mode = True
+
+
+class UserRoleUpdate(BaseModel):
+    role: str

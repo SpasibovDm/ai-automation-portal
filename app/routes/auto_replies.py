@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_db, require_admin
@@ -12,9 +12,14 @@ router = APIRouter(prefix="/auto-replies", tags=["auto-replies"])
 def create_template(
     template_in: AutoReplyTemplateCreate,
     db: Session = Depends(get_db),
-    _=Depends(require_admin),
+    current_user=Depends(require_admin),
 ) -> AutoReplyTemplateRead:
-    template = AutoReplyTemplate(**template_in.dict())
+    if not current_user.company_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Admin user must belong to a company",
+        )
+    template = AutoReplyTemplate(**template_in.dict(), company_id=current_user.company_id)
     db.add(template)
     db.commit()
     db.refresh(template)
@@ -24,6 +29,16 @@ def create_template(
 @router.get("/", response_model=list[AutoReplyTemplateRead])
 def list_templates(
     db: Session = Depends(get_db),
-    _=Depends(require_admin),
+    current_user=Depends(require_admin),
 ) -> list[AutoReplyTemplateRead]:
-    return db.query(AutoReplyTemplate).order_by(AutoReplyTemplate.created_at.desc()).all()
+    if not current_user.company_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Admin user must belong to a company",
+        )
+    return (
+        db.query(AutoReplyTemplate)
+        .filter(AutoReplyTemplate.company_id == current_user.company_id)
+        .order_by(AutoReplyTemplate.created_at.desc())
+        .all()
+    )

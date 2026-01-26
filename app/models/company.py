@@ -15,3 +15,4 @@ class Company(Base):
 
     users = relationship("User", back_populates="company")
     leads = relationship("Lead", back_populates="company")
+    auto_reply_templates = relationship("AutoReplyTemplate", back_populates="company")

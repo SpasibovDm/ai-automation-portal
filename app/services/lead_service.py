@@ -1,14 +1,18 @@
+import logging
+
 from sqlalchemy.orm import Session
 
 from app.models.lead import Lead
 from app.schemas.lead import LeadCreate, LeadUpdate
 
+logger = logging.getLogger(__name__)
 
 def create_lead(db: Session, lead_in: LeadCreate, company_id: int | None = None) -> Lead:
     lead = Lead(**lead_in.dict(), company_id=company_id)
     db.add(lead)
     db.commit()
     db.refresh(lead)
+    logger.info("Created lead", extra={"lead_id": lead.id, "company_id": company_id})
     return lead
 
 
