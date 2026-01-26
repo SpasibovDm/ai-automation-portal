@@ -11,7 +11,7 @@ class EmailMessageBase(BaseModel):
 
 
 class EmailMessageCreate(EmailMessageBase):
-    pass
+    company_id: Optional[int] = None
 
 
 class EmailMessageRead(EmailMessageBase):
@@ -19,6 +19,7 @@ class EmailMessageRead(EmailMessageBase):
     received_at: datetime
     processed: bool
     lead_id: Optional[int] = None
+    company_id: Optional[int] = None
 
     class Config:
         orm_mode = True

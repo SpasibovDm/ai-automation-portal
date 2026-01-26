@@ -10,20 +10,23 @@ from app.schemas.user import UserCreate
 logger = logging.getLogger(__name__)
 
 DEFAULT_ROLE = "operator"
+ADMIN_ROLE = "admin"
 
 
 def register_user(db: Session, user_in: UserCreate) -> User:
     company = db.query(Company).filter(Company.name == user_in.company_name).first()
+    is_new_company = False
     if not company:
         company = Company(name=user_in.company_name)
         db.add(company)
         db.commit()
         db.refresh(company)
         logger.info("Created company", extra={"company_id": company.id})
+        is_new_company = True
     user = User(
         email=user_in.email,
         hashed_password=get_password_hash(user_in.password),
-        role=DEFAULT_ROLE,
+        role=ADMIN_ROLE if is_new_company else DEFAULT_ROLE,
         company_id=company.id,
     )
     db.add(user)

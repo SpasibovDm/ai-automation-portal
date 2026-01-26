@@ -1,15 +1,20 @@
 # AI Automation Portal
 
-## Local development (venv)
+Full-stack B2B SaaS Business Automation Portal for managing inbound leads, incoming emails, and automated responses. The backend is built with FastAPI + SQLite, while the frontend uses React + Vite + TailwindCSS.
+
+## Backend (FastAPI)
+
+### Local development (venv)
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+cp .env.example .env
 uvicorn app.main:app --reload
 ```
 
-The API will be available at `http://127.0.0.1:8000`.
+The API will be available at `http://127.0.0.1:8000`, and Swagger docs at `http://127.0.0.1:8000/docs`.
 
 ### Database migrations (Alembic)
 
@@ -17,18 +22,9 @@ The API will be available at `http://127.0.0.1:8000`.
 alembic upgrade head
 ```
 
-## Docker
+### API examples (curl)
 
-A Dockerfile is not currently included in this repository. If one is added later, you can build and run the API with:
-
-```bash
-docker build -t ai-automation-portal .
-docker run -p 8000:8000 ai-automation-portal
-```
-
-## API examples (curl)
-
-### Register
+#### Register
 
 ```bash
 curl -X POST http://127.0.0.1:8000/auth/register \
@@ -40,7 +36,9 @@ curl -X POST http://127.0.0.1:8000/auth/register \
   }'
 ```
 
-### Login
+The first user registered for a new company is promoted to the `admin` role automatically.
+
+#### Login
 
 ```bash
 curl -X POST http://127.0.0.1:8000/auth/login \
@@ -48,7 +46,7 @@ curl -X POST http://127.0.0.1:8000/auth/login \
   -d "username=operator@example.com&password=change-me"
 ```
 
-### Create an auto-reply template (admin only)
+#### Create an auto-reply template (admin only)
 
 ```bash
 curl -X POST http://127.0.0.1:8000/auto-replies \
@@ -61,32 +59,49 @@ curl -X POST http://127.0.0.1:8000/auto-replies \
   }'
 ```
 
-### Receive a lead (public)
+#### Receive a lead (public)
 
 ```bash
-curl -X POST "http://127.0.0.1:8000/leads/public?company_id=1" \
+curl -X POST "http://127.0.0.1:8000/public/lead?company_id=1" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Taylor",
     "email": "taylor@example.com",
     "phone": "555-0100",
     "message": "I want to learn more",
-    "source": "web"
+    "source": "website"
   }'
 ```
 
-### Receive an email
+#### Receive an email (webhook)
 
 ```bash
-curl -X POST http://127.0.0.1:8000/emails/receive \
+curl -X POST http://127.0.0.1:8000/webhook/email \
   -H "Content-Type: application/json" \
   -d '{
     "from_email": "taylor@example.com",
     "subject": "Pricing question",
-    "body": "Can you share pricing details?"
+    "body": "Can you share pricing details?",
+    "company_id": 1
   }'
+```
+
+## Frontend (React)
+
+### Local development
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The UI will be available at `http://127.0.0.1:5173`. Configure the backend URL by creating `frontend/.env`:
+
+```bash
+VITE_API_URL="http://127.0.0.1:8000"
 ```
 
 ## Multi-tenant scoping
 
-Auto-reply templates are scoped to a company. Template creation and retrieval always use the requesting admin's `company_id`, and auto-replies are generated only when a matching template exists for the lead/email's company.
+Auto-reply templates, leads, and emails are scoped to a company. Template creation and retrieval always use the requesting admin's `company_id`, and auto-replies are generated only when a matching template exists for the lead/email's company.
