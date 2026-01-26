@@ -16,5 +16,7 @@ class EmailMessage(Base):
     received_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     processed = Column(Boolean, default=False, nullable=False)
     lead_id = Column(Integer, ForeignKey("leads.id"), nullable=True)
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=True)
 
     lead = relationship("Lead", back_populates="emails")
+    company = relationship("Company", back_populates="emails")

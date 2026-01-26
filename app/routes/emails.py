@@ -1,12 +1,26 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.core.deps import get_db
-from app.schemas.email_message import EmailMessageCreate, EmailReceiveResponse
+from app.core.deps import get_current_user, get_db
+from app.models.email_message import EmailMessage
+from app.schemas.email_message import EmailMessageCreate, EmailMessageRead, EmailReceiveResponse
 from app.services.auto_reply_service import generate_reply, get_template
 from app.services.email_service import receive_email
 
 router = APIRouter(prefix="/emails", tags=["emails"])
+
+
+@router.get("/", response_model=list[EmailMessageRead])
+def list_emails(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+) -> list[EmailMessageRead]:
+    return (
+        db.query(EmailMessage)
+        .filter(EmailMessage.company_id == current_user.company_id)
+        .order_by(EmailMessage.received_at.desc())
+        .all()
+    )
 
 
 @router.post("/receive", response_model=EmailReceiveResponse)

@@ -13,6 +13,12 @@ class AutoReplyTemplateCreate(AutoReplyTemplateBase):
     pass
 
 
+class AutoReplyTemplateUpdate(BaseModel):
+    trigger_type: str | None = None
+    subject_template: str | None = None
+    body_template: str | None = None
+
+
 class AutoReplyTemplateRead(AutoReplyTemplateBase):
     id: int
     company_id: int | None
