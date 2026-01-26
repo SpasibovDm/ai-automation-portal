@@ -15,6 +15,7 @@ class AutoReplyTemplateCreate(AutoReplyTemplateBase):
 
 class AutoReplyTemplateRead(AutoReplyTemplateBase):
     id: int
+    company_id: int | None
     created_at: datetime
 
     class Config:

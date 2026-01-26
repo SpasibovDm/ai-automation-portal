@@ -16,8 +16,13 @@ def create_public_lead(
     company_id: int | None = Query(default=None),
     db: Session = Depends(get_db),
 ) -> LeadCreateResponse:
+    if company_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="company_id is required for public lead submissions",
+        )
     lead = create_lead(db, lead_in, company_id=company_id)
-    template = get_template(db, "lead")
+    template = get_template(db, "lead", lead.company_id)
     auto_reply = None
     if template:
         auto_reply = generate_reply(template, {"name": lead.name, "email": lead.email})

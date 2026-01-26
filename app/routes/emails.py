@@ -13,8 +13,8 @@ router = APIRouter(prefix="/emails", tags=["emails"])
 def receive_incoming_email(
     email_in: EmailMessageCreate, db: Session = Depends(get_db)
 ) -> EmailReceiveResponse:
-    email = receive_email(db, email_in)
-    template = get_template(db, "email")
+    email, company_id = receive_email(db, email_in)
+    template = get_template(db, "email", company_id)
     auto_reply = None
     if template:
         auto_reply = generate_reply(
