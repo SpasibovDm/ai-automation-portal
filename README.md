@@ -102,6 +102,12 @@ The UI will be available at `http://127.0.0.1:5173`. Configure the backend URL b
 VITE_API_URL="http://127.0.0.1:8000"
 ```
 
+You can also start from the provided example file:
+
+```bash
+cp frontend/.env.example frontend/.env
+```
+
 ## Multi-tenant scoping
 
 Auto-reply templates, leads, and emails are scoped to a company. Template creation and retrieval always use the requesting admin's `company_id`, and auto-replies are generated only when a matching template exists for the lead/email's company.
