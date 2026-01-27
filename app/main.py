@@ -4,12 +4,11 @@ from typing import Callable
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
-from slowapi.util import get_remote_address
 
 from app.core.config import settings
+from app.core.limiter import limiter
 from app.core.database import Base, engine
 from app.models import (
     activity_log,
@@ -20,7 +19,7 @@ from app.models import (
     lead,
     user,
 )
-from app.routes import auth, auto_replies, companies, dashboard, emails, leads, public, users
+from app.routes import auth, auto_replies, chat, companies, dashboard, emails, leads, public, users
 
 Base.metadata.create_all(bind=engine)
 
@@ -28,8 +27,6 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
 )
-
-limiter = Limiter(key_func=get_remote_address, default_limits=[settings.rate_limit])
 
 app = FastAPI(title=settings.app_name)
 app.state.limiter = limiter
@@ -62,6 +59,7 @@ app.include_router(users.router)
 app.include_router(public.router)
 app.include_router(dashboard.router)
 app.include_router(companies.router)
+app.include_router(chat.router)
 
 
 @app.get("/")
