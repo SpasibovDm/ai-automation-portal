@@ -17,6 +17,9 @@ const initialMessages: ChatMessage[] = [
 ];
 
 const storageKey = "automation-chat-state";
+const assistantNameKey = "automation-assistant-name";
+const brandColorKey = "automation-brand-color";
+const assistantSettingsEvent = "assistant-settings-updated";
 
 const emailRegex = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i;
 
@@ -34,11 +37,17 @@ const ChatWidget: React.FC = () => {
     company: "",
     message: "",
   });
+  const [assistantName, setAssistantName] = useState(
+    () => localStorage.getItem(assistantNameKey) || "Nova"
+  );
+  const [brandColor, setBrandColor] = useState(
+    () => localStorage.getItem(brandColorKey) || "#4f46e5"
+  );
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   const chatTitle = useMemo(
-    () => (leadSubmitted ? "Thanks! We’ll follow up soon." : "AI Assistant"),
-    [leadSubmitted],
+    () => (leadSubmitted ? "Thanks! We’ll follow up soon." : `${assistantName} · AI Assistant`),
+    [assistantName, leadSubmitted]
   );
 
   const scrollToBottom = () => {
@@ -84,6 +93,30 @@ const ChatWidget: React.FC = () => {
       }),
     );
   }, [messages, leadInfo, leadSubmitted, leadPrompted, language]);
+
+  useEffect(() => {
+    const handleSettingsUpdate = () => {
+      setAssistantName(localStorage.getItem(assistantNameKey) || "Nova");
+      setBrandColor(localStorage.getItem(brandColorKey) || "#4f46e5");
+    };
+    window.addEventListener("storage", handleSettingsUpdate);
+    window.addEventListener(assistantSettingsEvent, handleSettingsUpdate);
+    return () => {
+      window.removeEventListener("storage", handleSettingsUpdate);
+      window.removeEventListener(assistantSettingsEvent, handleSettingsUpdate);
+    };
+  }, []);
+
+  const assistantInitials = useMemo(
+    () =>
+      assistantName
+        .split(" ")
+        .map((part) => part[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase(),
+    [assistantName]
+  );
 
   const extractName = (message: string) => {
     const nameMatch =
@@ -182,84 +215,115 @@ const ChatWidget: React.FC = () => {
 
   return (
     <div className="fixed bottom-6 right-6 z-50">
-      {isOpen && (
-        <div className="mb-4 w-80 rounded-2xl bg-white shadow-2xl border border-slate-200 flex flex-col">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
+      <div
+        className={`mb-4 w-80 rounded-2xl border border-slate-200 bg-white shadow-2xl transition-all duration-300 ${
+          isOpen ? "opacity-100 translate-y-0 scale-100" : "pointer-events-none opacity-0 translate-y-4 scale-95"
+        }`}
+      >
+        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
+          <div className="flex items-center gap-3">
+            <div
+              className="flex h-10 w-10 items-center justify-center rounded-full text-xs font-semibold text-white"
+              style={{ backgroundColor: brandColor }}
+            >
+              {assistantInitials}
+            </div>
             <div>
               <p className="text-sm font-semibold text-slate-900">{chatTitle}</p>
               <p className="text-xs text-slate-500">Typically replies in seconds</p>
             </div>
-            <select
-              value={language}
-              onChange={(event) => setLanguage(event.target.value)}
-              className="rounded-full border border-slate-200 bg-white px-2 py-1 text-xs text-slate-600"
-              aria-label="Select language"
+          </div>
+          <select
+            value={language}
+            onChange={(event) => setLanguage(event.target.value)}
+            className="rounded-full border border-slate-200 bg-white px-2 py-1 text-xs text-slate-600"
+            aria-label="Select language"
+          >
+            {["English", "Spanish", "French", "German", "Portuguese"].map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={() => setIsOpen(false)}
+            className="text-slate-400 hover:text-slate-600"
+            aria-label="Close chat"
+          >
+            ✕
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 max-h-96">
+          {messages.map((message) => (
+            <div
+              key={message.id}
+              className={`flex items-end gap-2 ${
+                message.role === "user" ? "justify-end" : "justify-start"
+              }`}
             >
-              {["English", "Spanish", "French", "German", "Portuguese"].map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
+              {message.role === "assistant" && (
+                <div
+                  className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-semibold text-white"
+                  style={{ backgroundColor: brandColor }}
+                >
+                  {assistantInitials}
+                </div>
+              )}
+              <div
+                className={`rounded-2xl px-3 py-2 text-sm leading-relaxed ${
+                  message.role === "user"
+                    ? "text-white"
+                    : "bg-slate-100 text-slate-700"
+                }`}
+                style={message.role === "user" ? { backgroundColor: brandColor } : undefined}
+              >
+                {message.content}
+              </div>
+            </div>
+          ))}
+          {isSending && (
+            <div className="flex items-center gap-2">
+              <div
+                className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-semibold text-white"
+                style={{ backgroundColor: brandColor }}
+              >
+                {assistantInitials}
+              </div>
+              <div className="flex items-center gap-1 rounded-2xl bg-slate-100 px-3 py-2 text-sm text-slate-500">
+                <span className="typing-dot" />
+                <span className="typing-dot animation-delay-150" />
+                <span className="typing-dot animation-delay-300" />
+              </div>
+            </div>
+          )}
+          <div ref={bottomRef} />
+        </div>
+        <form onSubmit={handleSubmit} className="border-t border-slate-200 px-3 py-3">
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={input}
+              onChange={(event) => setInput(event.target.value)}
+              placeholder="Type your message..."
+              className="flex-1 rounded-full border border-slate-200 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
             <button
-              type="button"
-              onClick={() => setIsOpen(false)}
-              className="text-slate-400 hover:text-slate-600"
-              aria-label="Close chat"
+              type="submit"
+              disabled={isSending}
+              className="rounded-full px-4 py-2 text-sm text-white shadow-sm disabled:opacity-60"
+              style={{ backgroundColor: brandColor }}
             >
-              ✕
+              Send
             </button>
           </div>
-          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 max-h-96">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
-              >
-                <div
-                  className={`rounded-2xl px-3 py-2 text-sm leading-relaxed ${
-                    message.role === "user"
-                      ? "bg-slate-900 text-white"
-                      : "bg-slate-100 text-slate-700"
-                  }`}
-                >
-                  {message.content}
-                </div>
-              </div>
-            ))}
-            {isSending && (
-              <div className="flex justify-start">
-                <div className="rounded-2xl px-3 py-2 text-sm bg-slate-100 text-slate-500">
-                  Typing...
-                </div>
-              </div>
-            )}
-            <div ref={bottomRef} />
-          </div>
-          <form onSubmit={handleSubmit} className="border-t border-slate-200 px-3 py-3">
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={input}
-                onChange={(event) => setInput(event.target.value)}
-                placeholder="Type your message..."
-                className="flex-1 rounded-full border border-slate-200 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-              />
-              <button
-                type="submit"
-                disabled={isSending}
-                className="rounded-full bg-slate-900 text-white px-4 py-2 text-sm hover:bg-slate-800 disabled:opacity-60"
-              >
-                Send
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+        </form>
+      </div>
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="rounded-full bg-slate-900 text-white px-5 py-3 shadow-xl hover:bg-slate-800"
+        className="rounded-full px-5 py-3 text-sm font-semibold text-white shadow-xl transition hover:brightness-110"
+        style={{ backgroundColor: brandColor }}
         aria-label="Toggle chat widget"
       >
         {isOpen ? "Close chat" : "Chat with us"}
