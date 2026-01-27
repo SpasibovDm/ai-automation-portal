@@ -20,3 +20,4 @@ class EmailMessage(Base):
 
     lead = relationship("Lead", back_populates="emails")
     company = relationship("Company", back_populates="emails")
+    replies = relationship("EmailReply", back_populates="email", cascade="all, delete-orphan")

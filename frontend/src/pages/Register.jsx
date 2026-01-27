@@ -1,11 +1,15 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-import { login } from "../services/api";
+import { register } from "../services/api";
 
-const Login = () => {
+const Register = () => {
   const navigate = useNavigate();
-  const [formState, setFormState] = useState({ email: "", password: "" });
+  const [formState, setFormState] = useState({
+    company_name: "",
+    email: "",
+    password: "",
+  });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -18,12 +22,10 @@ const Login = () => {
     setError("");
     setLoading(true);
     try {
-      const data = await login(formState.email, formState.password);
-      localStorage.setItem("accessToken", data.access_token);
-      localStorage.setItem("refreshToken", data.refresh_token);
-      navigate("/dashboard");
+      await register(formState);
+      navigate("/login");
     } catch (err) {
-      setError("Login failed. Please check your credentials.");
+      setError("Registration failed. Try a different email or company name.");
     } finally {
       setLoading(false);
     }
@@ -32,13 +34,24 @@ const Login = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4">
       <div className="bg-white rounded-3xl shadow-xl w-full max-w-md p-8">
-        <h1 className="text-2xl font-semibold text-slate-900">Welcome back</h1>
+        <h1 className="text-2xl font-semibold text-slate-900">Create your workspace</h1>
         <p className="text-sm text-slate-500 mt-2">
-          Sign in to manage leads, inbox automation, and AI replies.
+          Set up a secure company space and invite your team.
         </p>
         <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
           <div>
-            <label className="text-sm font-medium text-slate-700">Email</label>
+            <label className="text-sm font-medium text-slate-700">Company name</label>
+            <input
+              className="mt-2 w-full rounded-lg border border-slate-200 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-slate-900"
+              type="text"
+              name="company_name"
+              value={formState.company_name}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-slate-700">Work email</label>
             <input
               className="mt-2 w-full rounded-lg border border-slate-200 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-slate-900"
               type="email"
@@ -65,12 +78,12 @@ const Login = () => {
             className="w-full rounded-lg bg-slate-900 text-white py-2 font-medium hover:bg-slate-800"
             disabled={loading}
           >
-            {loading ? "Signing in..." : "Sign in"}
+            {loading ? "Creating..." : "Create account"}
           </button>
           <p className="text-sm text-slate-500 text-center">
-            New here?{" "}
-            <Link className="text-slate-900 font-medium" to="/register">
-              Create an account
+            Already have access?{" "}
+            <Link className="text-slate-900 font-medium" to="/login">
+              Sign in
             </Link>
           </p>
         </form>
@@ -79,4 +92,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Register;

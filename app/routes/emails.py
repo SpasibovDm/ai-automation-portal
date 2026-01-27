@@ -1,11 +1,10 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy.orm import joinedload
 
 from app.core.deps import get_current_user, get_db
 from app.models.email_message import EmailMessage
-from app.schemas.email_message import EmailMessageCreate, EmailMessageRead, EmailReceiveResponse
-from app.services.auto_reply_service import generate_reply, get_template
-from app.services.email_service import receive_email
+from app.schemas.email_message import EmailMessageRead, EmailThreadRead
 
 router = APIRouter(prefix="/emails", tags=["emails"])
 
@@ -17,25 +16,25 @@ def list_emails(
 ) -> list[EmailMessageRead]:
     return (
         db.query(EmailMessage)
+        .options(joinedload(EmailMessage.replies))
         .filter(EmailMessage.company_id == current_user.company_id)
         .order_by(EmailMessage.received_at.desc())
         .all()
     )
 
 
-@router.post("/receive", response_model=EmailReceiveResponse)
-def receive_incoming_email(
-    email_in: EmailMessageCreate, db: Session = Depends(get_db)
-) -> EmailReceiveResponse:
-    email, company_id = receive_email(db, email_in)
-    template = get_template(db, "email", company_id)
-    auto_reply = None
-    if template:
-        auto_reply = generate_reply(
-            template,
-            {
-                "email": email.from_email,
-                "subject": email.subject,
-            },
-        )
-    return EmailReceiveResponse(email=email, auto_reply=auto_reply)
+@router.get("/{email_id}", response_model=EmailThreadRead)
+def get_email_thread(
+    email_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+) -> EmailThreadRead:
+    email = (
+        db.query(EmailMessage)
+        .options(joinedload(EmailMessage.replies))
+        .filter(EmailMessage.id == email_id, EmailMessage.company_id == current_user.company_id)
+        .first()
+    )
+    if not email:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Email not found")
+    return EmailThreadRead(email=email)

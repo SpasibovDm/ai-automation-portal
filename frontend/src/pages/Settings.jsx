@@ -1,207 +1,157 @@
 import React, { useEffect, useState } from "react";
 
 import {
-  createTemplate,
-  deleteTemplate,
-  getTemplates,
-  updateTemplate,
+  getCompanySettings,
+  rotateCompanyKey,
+  updateCompanySettings,
 } from "../services/api";
 
-const triggerOptions = ["lead", "email"];
-
 const Settings = () => {
-  const [templates, setTemplates] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [company, setCompany] = useState(null);
   const [formState, setFormState] = useState({
-    trigger_type: "lead",
-    subject_template: "",
-    body_template: "",
+    name: "",
+    auto_reply_enabled: true,
+    ai_model: "",
+    ai_prompt_template: "",
   });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
-  const loadTemplates = async () => {
+  const loadSettings = async () => {
     try {
-      const data = await getTemplates();
-      setTemplates(data);
+      const data = await getCompanySettings();
+      setCompany(data);
+      setFormState({
+        name: data.name,
+        auto_reply_enabled: data.auto_reply_enabled,
+        ai_model: data.ai_model,
+        ai_prompt_template: data.ai_prompt_template,
+      });
+    } catch (err) {
+      setError("Unable to load company settings.");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadTemplates();
+    loadSettings();
   }, []);
 
-  const handleFormChange = (event) => {
-    setFormState((prev) => ({ ...prev, [event.target.name]: event.target.value }));
+  const handleChange = (event) => {
+    const { name, value, type, checked } = event.target;
+    setFormState((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
   };
 
-  const handleCreate = async (event) => {
+  const handleSave = async (event) => {
     event.preventDefault();
-    const created = await createTemplate(formState);
-    setTemplates((prev) => [created, ...prev]);
-    setFormState({ trigger_type: "lead", subject_template: "", body_template: "" });
+    setSaving(true);
+    setError("");
+    try {
+      const updated = await updateCompanySettings(formState);
+      setCompany(updated);
+    } catch (err) {
+      setError("Unable to save settings.");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleTemplateChange = (id, field, value) => {
-    setTemplates((prev) =>
-      prev.map((template) =>
-        template.id === id ? { ...template, [field]: value } : template
-      )
-    );
-  };
-
-  const handleSave = async (template) => {
-    const updated = await updateTemplate(template.id, {
-      trigger_type: template.trigger_type,
-      subject_template: template.subject_template,
-      body_template: template.body_template,
-    });
-    setTemplates((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
-  };
-
-  const handleDelete = async (id) => {
-    await deleteTemplate(id);
-    setTemplates((prev) => prev.filter((template) => template.id !== id));
+  const handleRotate = async () => {
+    const updated = await rotateCompanyKey();
+    setCompany(updated);
   };
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-2xl font-semibold text-slate-900">Auto-reply settings</h2>
-          <p className="text-sm text-slate-500">Manage response templates for leads and emails.</p>
-        </div>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-semibold text-slate-900">Company settings</h2>
+        <p className="text-sm text-slate-500">
+          Manage workspace details, API keys, and AI automation controls.
+        </p>
       </div>
 
-      <form
-        onSubmit={handleCreate}
-        className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-8"
-      >
-        <h3 className="text-lg font-semibold text-slate-900">Create template</h3>
-        <div className="grid md:grid-cols-2 gap-4 mt-4">
-          <div>
-            <label className="text-sm font-medium text-slate-700">Trigger type</label>
-            <select
-              name="trigger_type"
-              value={formState.trigger_type}
-              onChange={handleFormChange}
-              className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2"
+      {loading ? (
+        <div className="text-slate-500">Loading settings...</div>
+      ) : error ? (
+        <div className="text-sm text-red-600">{error}</div>
+      ) : (
+        <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
+          <form
+            onSubmit={handleSave}
+            className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 space-y-4"
+          >
+            <div>
+              <label className="text-sm font-medium text-slate-700">Company name</label>
+              <input
+                name="name"
+                value={formState.name}
+                onChange={handleChange}
+                className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-slate-700">AI model</label>
+              <input
+                name="ai_model"
+                value={formState.ai_model}
+                onChange={handleChange}
+                className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-slate-700">AI prompt template</label>
+              <textarea
+                name="ai_prompt_template"
+                value={formState.ai_prompt_template}
+                onChange={handleChange}
+                rows={5}
+                className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2"
+              />
+            </div>
+            <label className="flex items-center gap-2 text-sm text-slate-600">
+              <input
+                type="checkbox"
+                name="auto_reply_enabled"
+                checked={formState.auto_reply_enabled}
+                onChange={handleChange}
+                className="rounded border-slate-300"
+              />
+              Enable auto-replies
+            </label>
+            <button
+              type="submit"
+              className="w-full rounded-lg bg-slate-900 text-white py-2 text-sm font-medium"
+              disabled={saving}
             >
-              {triggerOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="text-sm font-medium text-slate-700">Subject template</label>
-            <input
-              name="subject_template"
-              value={formState.subject_template}
-              onChange={handleFormChange}
-              className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2"
-              placeholder="Thanks, {name}!"
-              required
-            />
-          </div>
-          <div className="md:col-span-2">
-            <label className="text-sm font-medium text-slate-700">Body template</label>
-            <textarea
-              name="body_template"
-              value={formState.body_template}
-              onChange={handleFormChange}
-              rows={3}
-              className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2"
-              placeholder="We received your inquiry about {source}."
-              required
-            />
+              {saving ? "Saving..." : "Save settings"}
+            </button>
+          </form>
+
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 space-y-4">
+            <div>
+              <h3 className="text-sm font-semibold text-slate-700">API key</h3>
+              <p className="text-xs text-slate-500">
+                Use this key to authenticate webhook requests.
+              </p>
+            </div>
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600 break-all">
+              {company?.api_key}
+            </div>
+            <button
+              type="button"
+              onClick={handleRotate}
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700"
+            >
+              Rotate API key
+            </button>
           </div>
         </div>
-        <button
-          type="submit"
-          className="mt-4 rounded-lg bg-slate-900 text-white px-4 py-2 text-sm font-medium"
-        >
-          Save template
-        </button>
-      </form>
-
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-        <h3 className="text-lg font-semibold text-slate-900">Existing templates</h3>
-        {loading ? (
-          <p className="text-slate-500 mt-4">Loading templates...</p>
-        ) : templates.length === 0 ? (
-          <p className="text-slate-500 mt-4">No templates yet.</p>
-        ) : (
-          <div className="mt-4 space-y-4">
-            {templates.map((template) => (
-              <div
-                key={template.id}
-                className="border border-slate-100 rounded-xl p-4 grid gap-3"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs uppercase text-slate-400">Template #{template.id}</span>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleSave(template)}
-                      className="text-xs font-medium px-3 py-1 rounded-lg border border-slate-200"
-                    >
-                      Save
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(template.id)}
-                      className="text-xs font-medium px-3 py-1 rounded-lg border border-red-200 text-red-500"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm text-slate-500">Trigger type</label>
-                    <select
-                      value={template.trigger_type}
-                      onChange={(event) =>
-                        handleTemplateChange(template.id, "trigger_type", event.target.value)
-                      }
-                      className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2"
-                    >
-                      {triggerOptions.map((option) => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-sm text-slate-500">Subject template</label>
-                    <input
-                      value={template.subject_template}
-                      onChange={(event) =>
-                        handleTemplateChange(template.id, "subject_template", event.target.value)
-                      }
-                      className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2"
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="text-sm text-slate-500">Body template</label>
-                    <textarea
-                      value={template.body_template}
-                      onChange={(event) =>
-                        handleTemplateChange(template.id, "body_template", event.target.value)
-                      }
-                      rows={3}
-                      className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2"
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 };

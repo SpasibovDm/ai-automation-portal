@@ -6,16 +6,20 @@ import { getDashboardStats } from "../services/api";
 const Dashboard = () => {
   const [stats, setStats] = useState({
     total_leads: 0,
-    new_leads: 0,
-    emails_received: 0,
+    leads_today: 0,
+    emails_today: 0,
+    replies_sent: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const loadStats = async () => {
       try {
         const data = await getDashboardStats();
         setStats(data);
+      } catch (err) {
+        setError("Unable to load dashboard metrics.");
       } finally {
         setLoading(false);
       }
@@ -33,11 +37,14 @@ const Dashboard = () => {
       </div>
       {loading ? (
         <div className="text-slate-500">Loading metrics...</div>
+      ) : error ? (
+        <div className="text-sm text-red-600">{error}</div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
           <StatCard label="Total leads" value={stats.total_leads} />
-          <StatCard label="New leads" value={stats.new_leads} />
-          <StatCard label="Emails received" value={stats.emails_received} />
+          <StatCard label="Leads today" value={stats.leads_today} />
+          <StatCard label="Emails today" value={stats.emails_today} />
+          <StatCard label="Replies sent" value={stats.replies_sent} />
         </div>
       )}
     </div>

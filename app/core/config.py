@@ -9,7 +9,12 @@ class Settings(BaseSettings):
     secret_key: str = "change-this-secret"
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 60
+    refresh_token_expire_minutes: int = 60 * 24 * 7
     database_url: str = "sqlite:///./app.db"
+    rate_limit: str = "100/minute"
+    ai_base_url: str = "https://api.openai.com/v1"
+    ai_api_key: str = "change-this-key"
+    ai_default_model: str = "gpt-4o-mini"
     allowed_origins: list[str] = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",
