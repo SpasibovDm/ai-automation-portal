@@ -6,9 +6,15 @@ import Modal from "../components/Modal";
 import Skeleton from "../components/Skeleton";
 import StatusBadge from "../components/StatusBadge";
 import { useToast } from "../components/ToastContext";
-import { getLeads, updateLead } from "../services/api";
+import { getLeadEmails, getLeads, updateLeadStatus } from "../services/api";
 
-const statusOptions = ["new", "contacted", "closed"];
+const statusOptions = ["new", "contacted", "qualified", "won", "lost"];
+const dateOptions = [
+  { value: "all", label: "All time" },
+  { value: "7", label: "Last 7 days" },
+  { value: "30", label: "Last 30 days" },
+  { value: "90", label: "Last 90 days" },
+];
 
 const Leads = () => {
   const [leads, setLeads] = useState([]);
@@ -16,8 +22,12 @@ const Leads = () => {
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState("all");
+  const [sourceFilter, setSourceFilter] = useState("all");
   const [selectedLead, setSelectedLead] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [leadEmails, setLeadEmails] = useState([]);
+  const [emailLoading, setEmailLoading] = useState(false);
   const { addToast } = useToast();
 
   const emptyState = useMemo(
@@ -44,18 +54,41 @@ const Leads = () => {
   }, []);
 
   const handleStatusChange = async (leadId, status) => {
-    const updated = await updateLead(leadId, { status });
-    setLeads((prev) => prev.map((lead) => (lead.id === updated.id ? updated : lead)));
-    addToast({
-      title: "Lead updated",
-      description: `Status set to ${status}.`,
-    });
+    try {
+      const updated = await updateLeadStatus(leadId, status);
+      setLeads((prev) => prev.map((lead) => (lead.id === updated.id ? updated : lead)));
+      addToast({
+        title: "Lead updated",
+        description: `Status set to ${status}.`,
+      });
+    } catch (err) {
+      addToast({
+        title: "Update failed",
+        description: "We could not update the lead status.",
+      });
+    }
   };
 
-  const handleViewLead = (lead) => {
+  const handleViewLead = async (lead) => {
     setSelectedLead(lead);
     setIsModalOpen(true);
+    setEmailLoading(true);
+    try {
+      const emails = await getLeadEmails(lead.id);
+      setLeadEmails(emails);
+    } catch (err) {
+      setLeadEmails([]);
+    } finally {
+      setEmailLoading(false);
+    }
   };
+
+  const sourceOptions = useMemo(() => {
+    const sources = leads
+      .map((lead) => lead.source)
+      .filter((source) => Boolean(source));
+    return Array.from(new Set(sources));
+  }, [leads]);
 
   const filteredLeads = leads.filter((lead) => {
     const matchesStatus = statusFilter === "all" || lead.status === statusFilter;
@@ -64,7 +97,12 @@ const Leads = () => {
       !search ||
       lead.name.toLowerCase().includes(search) ||
       lead.email.toLowerCase().includes(search);
-    return matchesStatus && matchesQuery;
+    const matchesSource = sourceFilter === "all" || lead.source === sourceFilter;
+    const matchesDate =
+      dateFilter === "all" ||
+      new Date(lead.created_at) >=
+        new Date(Date.now() - Number(dateFilter) * 24 * 60 * 60 * 1000);
+    return matchesStatus && matchesQuery && matchesSource && matchesDate;
   });
 
   return (
@@ -97,6 +135,29 @@ const Leads = () => {
               </option>
             ))}
           </select>
+          <select
+            value={dateFilter}
+            onChange={(event) => setDateFilter(event.target.value)}
+            className="rounded-full border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600"
+          >
+            {dateOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <select
+            value={sourceFilter}
+            onChange={(event) => setSourceFilter(event.target.value)}
+            className="rounded-full border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600"
+          >
+            <option value="all">All sources</option>
+            {sourceOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
       <div className="rounded-2xl border border-slate-100 bg-white shadow-md overflow-hidden">
@@ -115,6 +176,7 @@ const Leads = () => {
                 <th className="text-left px-6 py-3 font-medium">Name</th>
                 <th className="text-left px-6 py-3 font-medium">Email</th>
                 <th className="text-left px-6 py-3 font-medium">Tags</th>
+                <th className="text-left px-6 py-3 font-medium">Source</th>
                 <th className="text-left px-6 py-3 font-medium">Status</th>
                 <th className="text-left px-6 py-3 font-medium">Created</th>
                 <th className="text-left px-6 py-3 font-medium">Actions</th>
@@ -144,6 +206,9 @@ const Leads = () => {
                       ) : (
                         <span className="text-xs text-slate-400">No tags</span>
                       )}
+                    </td>
+                    <td className="px-6 py-4 text-slate-600">
+                      {lead.source || "Unknown"}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
@@ -178,7 +243,7 @@ const Leads = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8">
+                  <td colSpan={7} className="px-6 py-8">
                     <EmptyState
                       title={emptyState.title}
                       description={emptyState.description}
@@ -211,12 +276,60 @@ const Leads = () => {
                 </div>
               </div>
             </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              <div>
+                <p className="text-xs uppercase text-slate-400">Company</p>
+                <p className="mt-1 font-medium text-slate-900">
+                  {selectedLead.company || "Unknown"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs uppercase text-slate-400">Source</p>
+                <p className="mt-1 font-medium text-slate-900">
+                  {selectedLead.source || "Unknown"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs uppercase text-slate-400">Lead owner</p>
+                <p className="mt-1 font-medium text-slate-900">
+                  {selectedLead.owner || "AI Routing"}
+                </p>
+              </div>
+            </div>
             <div>
-              <p className="text-xs uppercase text-slate-400">Conversation summary</p>
+              <p className="text-xs uppercase text-slate-400">AI summary</p>
               <p className="mt-2 rounded-xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-600">
-                {selectedLead.message ||
+                {selectedLead.ai_summary ||
+                  selectedLead.message ||
                   "Lead asked about pricing and onboarding. AI suggested a personalized demo and sent a follow-up email."}
               </p>
+            </div>
+            <div>
+              <p className="text-xs uppercase text-slate-400">Email history</p>
+              <div className="mt-2 space-y-3">
+                {emailLoading ? (
+                  <Skeleton className="h-20" />
+                ) : leadEmails.length ? (
+                  leadEmails.map((email) => (
+                    <div
+                      key={email.id}
+                      className="rounded-xl border border-slate-100 bg-white p-3"
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-slate-900">
+                          {email.subject}
+                        </p>
+                        <span className="text-xs text-slate-400">
+                          {new Date(email.received_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-xs text-slate-500">{email.preview}</p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-slate-400">No related emails yet.</p>
+                )}
+              </div>
             </div>
             <div>
               <p className="text-xs uppercase text-slate-400">Notes</p>

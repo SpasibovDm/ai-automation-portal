@@ -64,8 +64,28 @@ export const getDashboardStats = async () => {
   return response.data;
 };
 
+export const getDashboardActivity = async () => {
+  const response = await api.get("/dashboard/activity");
+  return response.data;
+};
+
+export const getDashboardUrgent = async () => {
+  const response = await api.get("/dashboard/urgent");
+  return response.data;
+};
+
 export const getLeads = async () => {
   const response = await api.get("/leads");
+  return response.data;
+};
+
+export const updateLeadStatus = async (leadId, status) => {
+  const response = await api.patch(`/leads/${leadId}/status`, { status });
+  return response.data;
+};
+
+export const getLeadEmails = async (leadId) => {
+  const response = await api.get(`/leads/${leadId}/emails`);
   return response.data;
 };
 
@@ -81,6 +101,16 @@ export const getEmails = async () => {
 
 export const getEmailThread = async (emailId) => {
   const response = await api.get(`/emails/${emailId}`);
+  return response.data;
+};
+
+export const getEmailAnalysis = async (emailId) => {
+  const response = await api.get(`/emails/${emailId}/analysis`);
+  return response.data;
+};
+
+export const regenerateEmailReply = async (emailId) => {
+  const response = await api.post(`/emails/${emailId}/regenerate-reply`);
   return response.data;
 };
 
@@ -101,6 +131,11 @@ export const updateTemplate = async (templateId, payload) => {
 
 export const deleteTemplate = async (templateId) => {
   await api.delete(`/auto-replies/${templateId}`);
+};
+
+export const getAnalyticsOverview = async () => {
+  const response = await api.get("/analytics/overview");
+  return response.data;
 };
 
 export const getCompanySettings = async () => {
