@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 
 import Layout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
+import Analytics from "./pages/Analytics";
 import Dashboard from "./pages/Dashboard";
 import Emails from "./pages/Emails";
 import Leads from "./pages/Leads";
@@ -26,6 +27,7 @@ const App = () => {
       >
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
+        <Route path="analytics" element={<Analytics />} />
         <Route path="leads" element={<Leads />} />
         <Route path="emails" element={<Emails />} />
         <Route path="templates" element={<Templates />} />
