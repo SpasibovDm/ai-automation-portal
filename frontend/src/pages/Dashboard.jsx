@@ -10,7 +10,8 @@ import {
 } from "../components/Icons";
 import Skeleton from "../components/Skeleton";
 import StatCard from "../components/StatCard";
-import { getDashboardStats } from "../services/api";
+import StatusBadge from "../components/StatusBadge";
+import { getDashboardActivity, getDashboardStats, getDashboardUrgent } from "../services/api";
 
 const Dashboard = () => {
   const [stats, setStats] = useState({
@@ -21,6 +22,12 @@ const Dashboard = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [activityFeed, setActivityFeed] = useState([]);
+  const [urgentItems, setUrgentItems] = useState([]);
+  const [activityLoading, setActivityLoading] = useState(true);
+  const [urgentLoading, setUrgentLoading] = useState(true);
+  const [activityError, setActivityError] = useState("");
+  const [urgentError, setUrgentError] = useState("");
   const lineChartRef = useRef(null);
   const barChartRef = useRef(null);
   const lineInstance = useRef(null);
@@ -72,6 +79,36 @@ const Dashboard = () => {
     []
   );
 
+  const fallbackActivityFeed = useMemo(
+    () => [
+      { title: "AI classified email", detail: "Lead inquiry · /sales", time: "Just now" },
+      { title: "AI generated reply", detail: "Follow-up to trial request", time: "12 min ago" },
+      { title: "New lead detected", detail: "Inbound chat widget", time: "35 min ago" },
+    ],
+    []
+  );
+
+  const fallbackUrgentItems = useMemo(
+    () => [
+      {
+        title: "Emails waiting for approval",
+        detail: "5 replies queued · 2 high priority",
+        level: "high",
+      },
+      {
+        title: "Leads without reply > 24h",
+        detail: "3 leads need a follow-up sequence",
+        level: "medium",
+      },
+      {
+        title: "Low confidence AI replies",
+        detail: "2 drafts below 70% confidence",
+        level: "low",
+      },
+    ],
+    []
+  );
+
   const pendingActions = useMemo(
     () => Math.max(stats.total_leads - stats.replies_sent, 0),
     [stats]
@@ -90,6 +127,36 @@ const Dashboard = () => {
     };
     loadStats();
   }, []);
+
+  useEffect(() => {
+    const loadActivity = async () => {
+      try {
+        const data = await getDashboardActivity();
+        setActivityFeed(data);
+      } catch (err) {
+        setActivityError("Unable to load AI activity.");
+        setActivityFeed(fallbackActivityFeed);
+      } finally {
+        setActivityLoading(false);
+      }
+    };
+    loadActivity();
+  }, [fallbackActivityFeed]);
+
+  useEffect(() => {
+    const loadUrgent = async () => {
+      try {
+        const data = await getDashboardUrgent();
+        setUrgentItems(data);
+      } catch (err) {
+        setUrgentError("Unable to load urgent items.");
+        setUrgentItems(fallbackUrgentItems);
+      } finally {
+        setUrgentLoading(false);
+      }
+    };
+    loadUrgent();
+  }, [fallbackUrgentItems]);
 
   useEffect(() => {
     const Chart = window.Chart;
@@ -256,6 +323,80 @@ const Dashboard = () => {
           <div className="mt-6 h-64">
             <canvas ref={barChartRef} />
           </div>
+        </div>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[1.2fr_1fr]">
+        <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-md">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-slate-900">AI Activity Feed</h3>
+              <p className="text-xs text-slate-500">Real-time automation events</p>
+            </div>
+            <button
+              type="button"
+              className="rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-500"
+            >
+              View all
+            </button>
+          </div>
+          {activityLoading ? (
+            <div className="mt-6 space-y-3">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <Skeleton key={`activity-skeleton-${index}`} className="h-14" />
+              ))}
+            </div>
+          ) : activityError && !activityFeed.length ? (
+            <div className="mt-6 text-xs text-rose-500">{activityError}</div>
+          ) : (
+            <div className="mt-6 space-y-4">
+              {activityFeed.map((activity) => (
+                <div
+                  key={`${activity.title}-${activity.time}`}
+                  className="flex items-start justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-slate-900">{activity.title}</p>
+                    <p className="text-xs text-slate-500">{activity.detail}</p>
+                  </div>
+                  <span className="text-xs text-slate-400">{activity.time}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-md">
+          <div className="flex items-center gap-2">
+            <BotIcon className="h-5 w-5 text-indigo-500" />
+            <div>
+              <h3 className="text-sm font-semibold text-slate-900">Urgent Items</h3>
+              <p className="text-xs text-slate-500">Items needing human review</p>
+            </div>
+          </div>
+          {urgentLoading ? (
+            <div className="mt-6 space-y-3">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <Skeleton key={`urgent-skeleton-${index}`} className="h-14" />
+              ))}
+            </div>
+          ) : urgentError && !urgentItems.length ? (
+            <div className="mt-6 text-xs text-rose-500">{urgentError}</div>
+          ) : (
+            <div className="mt-6 space-y-3">
+              {urgentItems.map((item) => (
+                <div
+                  key={item.title}
+                  className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-slate-900">{item.title}</p>
+                    <p className="text-xs text-slate-500">{item.detail}</p>
+                  </div>
+                  <StatusBadge status={item.level} label={item.level} />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
