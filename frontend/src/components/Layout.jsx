@@ -1,6 +1,8 @@
 import React from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 
+import ChatWidget from "./ChatWidget";
+
 const navItems = [
   { label: "Dashboard", path: "/dashboard" },
   { label: "Leads", path: "/leads" },
@@ -62,6 +64,7 @@ const Layout = () => {
           <Outlet />
         </main>
       </div>
+      <ChatWidget />
     </div>
   );
 };

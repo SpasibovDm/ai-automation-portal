@@ -8,7 +8,7 @@ from app.schemas.lead import LeadCreate, LeadUpdate
 logger = logging.getLogger(__name__)
 
 def create_lead(db: Session, lead_in: LeadCreate, company_id: int | None = None) -> Lead:
-    data = lead_in.dict()
+    data = lead_in.dict(exclude_none=True)
     tags = data.pop("tags", None)
     lead = Lead(
         **data,

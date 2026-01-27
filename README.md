@@ -111,3 +111,25 @@ cp frontend/.env.example frontend/.env
 ## Multi-tenant scoping
 
 Auto-reply templates, leads, and emails are scoped to a company. Template creation and retrieval always use the requesting admin's `company_id`, and auto-replies are generated only when a matching template exists for the lead/email's company.
+
+## AI Chat Assistant
+
+The portal now ships with a floating AI chat widget that can be embedded in any React page.
+
+### Endpoints
+
+- `POST /api/chat/message`
+- `POST /api/chat/lead`
+
+### Embed the widget
+
+1. Ensure `VITE_API_URL` points at your backend (for example, `http://127.0.0.1:8000`).
+2. Import and render the widget once in your layout:
+
+```tsx
+import ChatWidget from "./components/ChatWidget";
+
+<ChatWidget />
+```
+
+The widget opens from the bottom-right corner, responds to messages, and submits a lead when an email is provided.

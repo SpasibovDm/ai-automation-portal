@@ -10,6 +10,7 @@ class LeadBase(BaseModel):
     phone: Optional[str] = None
     message: Optional[str] = None
     source: Optional[str] = None
+    conversation_summary: Optional[str] = None
     tags: Optional[list[str]] = None
 
     @field_validator("tags", mode="before")
