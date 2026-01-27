@@ -11,6 +11,7 @@ export type ChatLeadPayload = {
   email: string;
   message: string;
   company?: string;
+  language?: string;
 };
 
 export const sendChatMessage = async (message: string) => {

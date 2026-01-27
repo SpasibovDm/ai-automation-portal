@@ -9,6 +9,12 @@ class EmailReplyRead(BaseModel):
     subject: str
     body: str
     generated_by_ai: bool
+    send_status: str
+    provider: Optional[str] = None
+    provider_message_id: Optional[str] = None
+    send_attempted_at: Optional[datetime] = None
+    sent_at: Optional[datetime] = None
+    send_error: Optional[str] = None
     created_at: datetime
 
     class Config:

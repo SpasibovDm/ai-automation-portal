@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
 import { createChatLead, sendChatMessage } from "../services/chatApi";
 
@@ -16,6 +16,8 @@ const initialMessages: ChatMessage[] = [
   },
 ];
 
+const storageKey = "automation-chat-state";
+
 const emailRegex = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i;
 
 const ChatWidget: React.FC = () => {
@@ -25,6 +27,7 @@ const ChatWidget: React.FC = () => {
   const [isSending, setIsSending] = useState(false);
   const [leadSubmitted, setLeadSubmitted] = useState(false);
   const [leadPrompted, setLeadPrompted] = useState(false);
+  const [language, setLanguage] = useState("English");
   const [leadInfo, setLeadInfo] = useState({
     name: "",
     email: "",
@@ -41,6 +44,46 @@ const ChatWidget: React.FC = () => {
   const scrollToBottom = () => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   };
+
+  useEffect(() => {
+    const cached = localStorage.getItem(storageKey);
+    if (!cached) {
+      return;
+    }
+    try {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed.messages) && parsed.messages.length) {
+        setMessages(parsed.messages);
+      }
+      if (parsed.leadInfo) {
+        setLeadInfo(parsed.leadInfo);
+      }
+      if (typeof parsed.leadSubmitted === "boolean") {
+        setLeadSubmitted(parsed.leadSubmitted);
+      }
+      if (typeof parsed.leadPrompted === "boolean") {
+        setLeadPrompted(parsed.leadPrompted);
+      }
+      if (typeof parsed.language === "string") {
+        setLanguage(parsed.language);
+      }
+    } catch (error) {
+      console.warn("Unable to restore chat state", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(
+      storageKey,
+      JSON.stringify({
+        messages,
+        leadInfo,
+        leadSubmitted,
+        leadPrompted,
+        language,
+      }),
+    );
+  }, [messages, leadInfo, leadSubmitted, leadPrompted, language]);
 
   const extractName = (message: string) => {
     const nameMatch =
@@ -110,6 +153,7 @@ const ChatWidget: React.FC = () => {
           email: nextLead.email,
           message: nextLead.message,
           company: nextLead.company || undefined,
+          language,
         });
         setLeadSubmitted(true);
         setMessages((prev) => [
@@ -145,6 +189,18 @@ const ChatWidget: React.FC = () => {
               <p className="text-sm font-semibold text-slate-900">{chatTitle}</p>
               <p className="text-xs text-slate-500">Typically replies in seconds</p>
             </div>
+            <select
+              value={language}
+              onChange={(event) => setLanguage(event.target.value)}
+              className="rounded-full border border-slate-200 bg-white px-2 py-1 text-xs text-slate-600"
+              aria-label="Select language"
+            >
+              {["English", "Spanish", "French", "German", "Portuguese"].map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
             <button
               type="button"
               onClick={() => setIsOpen(false)}

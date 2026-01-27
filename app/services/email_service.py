@@ -1,11 +1,14 @@
 import logging
+from datetime import datetime
 
 from sqlalchemy.orm import Session
 
 from app.models.email_message import EmailMessage
 from app.models.email_reply import EmailReply
+from app.models.email_integration import EmailIntegration
 from app.models.lead import Lead
 from app.schemas.email_message import EmailMessageCreate
+from app.services.email_provider import get_email_client
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +49,30 @@ def create_email_reply(
     email.processed = True
     db.add(reply)
     db.add(email)
+    db.commit()
+    db.refresh(reply)
+    return reply
+
+
+def send_email_reply(
+    db: Session,
+    *,
+    reply: EmailReply,
+    integration: EmailIntegration,
+) -> EmailReply:
+    reply.send_attempted_at = datetime.utcnow()
+    reply.provider = integration.provider
+    client = get_email_client(integration)
+    message_id = client.send_email(
+        to_email=reply.email.from_email,
+        subject=reply.subject,
+        body=reply.body,
+    )
+    reply.send_status = "sent"
+    reply.sent_at = datetime.utcnow()
+    reply.provider_message_id = message_id
+    reply.send_error = None
+    db.add(reply)
     db.commit()
     db.refresh(reply)
     return reply

@@ -111,9 +111,15 @@ const Emails = () => {
                           </span>
                         </div>
                         <p className="mt-2 text-sm text-slate-600">{reply.body}</p>
-                        <span className="mt-2 inline-flex text-xs text-slate-400">
-                          {reply.generated_by_ai ? "AI generated" : "Manual reply"}
-                        </span>
+                        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-400">
+                          <span>{reply.generated_by_ai ? "AI generated" : "Manual reply"}</span>
+                          {reply.send_status && (
+                            <span className="rounded-full bg-slate-100 px-2 py-1 text-slate-500">
+                              {reply.send_status}
+                            </span>
+                          )}
+                          {reply.provider && <span>via {reply.provider}</span>}
+                        </div>
                       </div>
                     ))
                   ) : (
