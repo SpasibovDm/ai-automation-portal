@@ -14,6 +14,7 @@ class Lead(Base):
     email = Column(String, index=True, nullable=False)
     phone = Column(String, nullable=True)
     message = Column(String, nullable=True)
+    preferred_language = Column(String, nullable=True)
     source = Column(String, default="chat", nullable=False)
     conversation_summary = Column(Text, nullable=True)
     status = Column(String, default="new", nullable=False)

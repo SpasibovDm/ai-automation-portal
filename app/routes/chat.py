@@ -40,6 +40,7 @@ def chat_lead(
         message=payload.message,
         source="chat",
         conversation_summary=conversation_summary,
+        preferred_language=payload.language,
     )
     db.add(lead)
     db.commit()

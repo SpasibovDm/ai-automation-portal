@@ -32,7 +32,10 @@ def get_stats(
     replies_sent = (
         db.query(EmailReply)
         .join(EmailMessage, EmailReply.email_id == EmailMessage.id)
-        .filter(EmailMessage.company_id == current_user.company_id)
+        .filter(
+            EmailMessage.company_id == current_user.company_id,
+            EmailReply.send_status == "sent",
+        )
         .count()
     )
     return DashboardStats(

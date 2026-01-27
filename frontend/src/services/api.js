@@ -118,4 +118,14 @@ export const rotateCompanyKey = async () => {
   return response.data;
 };
 
+export const getEmailIntegrationStatus = async () => {
+  const response = await api.get("/integrations/email/status");
+  return response.data;
+};
+
+export const connectEmailIntegration = async (payload) => {
+  const response = await api.post("/integrations/email/connect", payload);
+  return response.data;
+};
+
 export default api;

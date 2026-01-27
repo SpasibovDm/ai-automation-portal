@@ -10,11 +10,15 @@ class Settings(BaseSettings):
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 60
     refresh_token_expire_minutes: int = 60 * 24 * 7
-    database_url: str = "sqlite:///./app.db"
+    database_url: str = "postgresql+psycopg2://postgres:postgres@db:5432/automation"
     rate_limit: str = "100/minute"
+    redis_url: str = "redis://redis:6379/0"
+    celery_task_always_eager: bool = False
     ai_base_url: str = "https://api.openai.com/v1"
     ai_api_key: str = "change-this-key"
     ai_default_model: str = "gpt-4o-mini"
+    sentry_dsn: str = ""
+    sentry_environment: str = "development"
     allowed_origins: list[str] = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",

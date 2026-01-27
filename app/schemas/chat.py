@@ -33,8 +33,9 @@ class ChatLeadCreate(BaseModel):
     email: EmailStr
     message: str
     company: Optional[str] = None
+    language: Optional[str] = None
 
-    @field_validator("name", "message", "company", mode="before")
+    @field_validator("name", "message", "company", "language", mode="before")
     @classmethod
     def sanitize_fields(cls, value: Optional[str]) -> Optional[str]:
         return _sanitize_text(value)

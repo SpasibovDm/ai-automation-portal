@@ -9,6 +9,7 @@ class LeadBase(BaseModel):
     email: EmailStr
     phone: Optional[str] = None
     message: Optional[str] = None
+    preferred_language: Optional[str] = None
     source: Optional[str] = None
     conversation_summary: Optional[str] = None
     tags: Optional[list[str]] = None

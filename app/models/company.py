@@ -26,3 +26,6 @@ class Company(Base):
     emails = relationship("EmailMessage", back_populates="company")
     auto_reply_templates = relationship("AutoReplyTemplate", back_populates="company")
     activity_logs = relationship("ActivityLog", back_populates="company")
+    email_integrations = relationship(
+        "EmailIntegration", back_populates="company", cascade="all, delete-orphan"
+    )

@@ -1,6 +1,15 @@
 # AI Automation Portal
 
-Full-stack B2B SaaS Business Automation Portal for managing inbound leads, incoming emails, and automated responses. The backend is built with FastAPI + SQLite, while the frontend uses React + Vite + TailwindCSS.
+Full-stack B2B SaaS Business Automation Portal for managing inbound leads, incoming emails, and automated responses. The backend uses FastAPI + PostgreSQL + Redis + Celery, while the frontend uses React + Vite + TailwindCSS.
+
+## Local development (Docker)
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+The API will be available at `http://127.0.0.1:8000/docs` and the frontend at `http://127.0.0.1:5173`.
 
 ## Backend (FastAPI)
 
@@ -62,7 +71,8 @@ curl -X POST http://127.0.0.1:8000/auto-replies \
 #### Receive a lead (public)
 
 ```bash
-curl -X POST "http://127.0.0.1:8000/public/lead?company_id=1" \
+curl -X POST "http://127.0.0.1:8000/public/lead" \
+  -H "X-Company-Key: <COMPANY_API_KEY>" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Taylor",
@@ -77,14 +87,36 @@ curl -X POST "http://127.0.0.1:8000/public/lead?company_id=1" \
 
 ```bash
 curl -X POST http://127.0.0.1:8000/webhook/email \
+  -H "X-Company-Key: <COMPANY_API_KEY>" \
   -H "Content-Type: application/json" \
   -d '{
     "from_email": "taylor@example.com",
     "subject": "Pricing question",
-    "body": "Can you share pricing details?",
-    "company_id": 1
+    "body": "Can you share pricing details?"
   }'
 ```
+
+#### Connect Gmail or Microsoft 365
+
+```bash
+curl -X POST http://127.0.0.1:8000/integrations/email/connect \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "provider": "gmail",
+    "email_address": "inbox@example.com",
+    "access_token": "oauth-access-token",
+    "refresh_token": "oauth-refresh-token",
+    "scopes": ["https://mail.google.com/"]
+  }'
+```
+
+```bash
+curl -X GET http://127.0.0.1:8000/integrations/email/status \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+OAuth tokens are stored in the database for now; replace the placeholder storage with your preferred KMS/encryption strategy for production.
 
 ## Frontend (React)
 
@@ -111,6 +143,29 @@ cp frontend/.env.example frontend/.env
 ## Multi-tenant scoping
 
 Auto-reply templates, leads, and emails are scoped to a company. Template creation and retrieval always use the requesting admin's `company_id`, and auto-replies are generated only when a matching template exists for the lead/email's company.
+
+## Auto-reply workflow
+
+1. Incoming emails are received via the `/webhook/email` endpoint.
+2. Celery generates an AI reply in the background using the active template.
+3. The reply is sent through the connected Gmail or Microsoft 365 integration.
+4. Delivery status, message ID, and timestamps are stored with the reply record.
+
+## Health & monitoring
+
+- Health check: `GET /health`
+- Structured logging is enabled in the API middleware.
+- Sentry can be enabled by setting `SENTRY_DSN` and `SENTRY_ENVIRONMENT`.
+
+## Production deployment
+
+Use the production compose file to run Postgres, Redis, API, Celery worker, and the Nginx-served frontend:
+
+```bash
+docker compose -f docker-compose.prod.yml up --build
+```
+
+Set `ALLOWED_ORIGINS` to your frontend domain and update the `.env` secrets before deploying.
 
 ## AI Chat Assistant
 
