@@ -8,6 +8,7 @@ from app.schemas.auto_reply_template import (
     AutoReplyTemplateRead,
     AutoReplyTemplateUpdate,
 )
+from app.services.activity_service import log_activity
 
 router = APIRouter(prefix="/auto-replies", tags=["auto-replies"])
 
@@ -27,6 +28,15 @@ def create_template(
     db.add(template)
     db.commit()
     db.refresh(template)
+    log_activity(
+        db,
+        action="create",
+        entity_type="auto_reply_template",
+        entity_id=template.id,
+        company_id=current_user.company_id,
+        user_id=current_user.id,
+        description="Auto-reply template created",
+    )
     return template
 
 
@@ -71,6 +81,15 @@ def update_template(
     db.add(template)
     db.commit()
     db.refresh(template)
+    log_activity(
+        db,
+        action="update",
+        entity_type="auto_reply_template",
+        entity_id=template.id,
+        company_id=current_user.company_id,
+        user_id=current_user.id,
+        description="Auto-reply template updated",
+    )
     return template
 
 
@@ -92,4 +111,13 @@ def delete_template(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Template not found")
     db.delete(template)
     db.commit()
+    log_activity(
+        db,
+        action="delete",
+        entity_type="auto_reply_template",
+        entity_id=template.id,
+        company_id=current_user.company_id,
+        user_id=current_user.id,
+        description="Auto-reply template deleted",
+    )
     return None

@@ -3,7 +3,9 @@ from typing import Dict, Optional
 
 from sqlalchemy.orm import Session
 
+from app.models.company import Company
 from app.models.auto_reply_template import AutoReplyTemplate
+from app.services.llm_service import generate_ai_reply
 
 logger = logging.getLogger(__name__)
 
@@ -38,3 +40,19 @@ def generate_reply(
         "subject": template.subject_template.format_map(safe_context),
         "body": template.body_template.format_map(safe_context),
     }
+
+
+def generate_ai_reply_from_template(
+    template: AutoReplyTemplate,
+    company: Company,
+    context: Dict[str, str],
+) -> Dict[str, str]:
+    base = generate_reply(template, context)
+    prompt = (
+        f"{company.ai_prompt_template}\n"
+        f"Subject suggestion: {base['subject']}\n"
+        f"Context:\n{context}\n\n"
+        "Draft a helpful, concise reply."
+    )
+    body = generate_ai_reply(prompt, company.ai_model)
+    return {"subject": base["subject"], "body": body}

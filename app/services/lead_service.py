@@ -8,7 +8,13 @@ from app.schemas.lead import LeadCreate, LeadUpdate
 logger = logging.getLogger(__name__)
 
 def create_lead(db: Session, lead_in: LeadCreate, company_id: int | None = None) -> Lead:
-    lead = Lead(**lead_in.dict(), company_id=company_id)
+    data = lead_in.dict()
+    tags = data.pop("tags", None)
+    lead = Lead(
+        **data,
+        tags=",".join(tags) if tags else None,
+        company_id=company_id,
+    )
     db.add(lead)
     db.commit()
     db.refresh(lead)
@@ -22,6 +28,9 @@ def list_leads(db: Session, company_id: int) -> list[Lead]:
 
 def update_lead(db: Session, lead: Lead, lead_in: LeadUpdate) -> Lead:
     data = lead_in.dict(exclude_unset=True)
+    if "tags" in data:
+        tags = data.pop("tags")
+        data["tags"] = ",".join(tags) if tags else None
     for key, value in data.items():
         setattr(lead, key, value)
     db.add(lead)

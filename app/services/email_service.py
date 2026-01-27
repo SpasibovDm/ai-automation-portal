@@ -3,6 +3,7 @@ import logging
 from sqlalchemy.orm import Session
 
 from app.models.email_message import EmailMessage
+from app.models.email_reply import EmailReply
 from app.models.lead import Lead
 from app.schemas.email_message import EmailMessageCreate
 
@@ -26,3 +27,25 @@ def receive_email(db: Session, email_in: EmailMessageCreate) -> tuple[EmailMessa
     db.commit()
     db.refresh(email)
     return email, company_id
+
+
+def create_email_reply(
+    db: Session,
+    *,
+    email: EmailMessage,
+    subject: str,
+    body: str,
+    generated_by_ai: bool = True,
+) -> EmailReply:
+    reply = EmailReply(
+        email_id=email.id,
+        subject=subject,
+        body=body,
+        generated_by_ai=generated_by_ai,
+    )
+    email.processed = True
+    db.add(reply)
+    db.add(email)
+    db.commit()
+    db.refresh(reply)
+    return reply

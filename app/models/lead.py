@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -16,6 +16,7 @@ class Lead(Base):
     message = Column(String, nullable=True)
     source = Column(String, nullable=True)
     status = Column(String, default="new", nullable=False)
+    tags = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=True)
 

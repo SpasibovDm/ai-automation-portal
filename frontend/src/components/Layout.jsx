@@ -5,6 +5,7 @@ const navItems = [
   { label: "Dashboard", path: "/dashboard" },
   { label: "Leads", path: "/leads" },
   { label: "Emails", path: "/emails" },
+  { label: "Templates", path: "/templates" },
   { label: "Settings", path: "/settings" },
 ];
 
@@ -12,15 +13,19 @@ const Layout = () => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
     navigate("/login");
   };
 
   return (
-    <div className="min-h-screen flex bg-slate-50">
-      <aside className="w-64 bg-slate-950 text-white p-6 flex flex-col">
-        <div className="text-xl font-semibold mb-10">Automation Portal</div>
-        <nav className="flex-1 space-y-2">
+    <div className="min-h-screen flex bg-slate-950 text-slate-900">
+      <aside className="w-64 bg-slate-950 text-white p-6 flex flex-col border-r border-white/10">
+        <div className="text-xl font-semibold mb-10">
+          <span className="block text-sm uppercase tracking-widest text-slate-400">SaaS</span>
+          Automation Portal
+        </div>
+        <nav className="flex-1 space-y-2 text-sm">
           {navItems.map((item) => (
             <NavLink
               key={item.path}
@@ -45,13 +50,13 @@ const Layout = () => {
           Sign out
         </button>
       </aside>
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col bg-slate-50">
         <header className="bg-white shadow-sm px-8 py-4 flex items-center justify-between">
           <div>
-            <p className="text-sm text-slate-500">Welcome back</p>
-            <h1 className="text-lg font-semibold text-slate-900">Business Automation Portal</h1>
+            <p className="text-sm text-slate-500">Workspace overview</p>
+            <h1 className="text-lg font-semibold text-slate-900">Automation Command Center</h1>
           </div>
-          <div className="text-sm text-slate-500">Secure Company Workspace</div>
+          <div className="text-sm text-slate-500">Multi-tenant secure workspace</div>
         </header>
         <main className="flex-1 p-8">
           <Outlet />

@@ -1,4 +1,5 @@
 import logging
+import secrets
 
 from sqlalchemy.orm import Session
 
@@ -17,7 +18,7 @@ def register_user(db: Session, user_in: UserCreate) -> User:
     company = db.query(Company).filter(Company.name == user_in.company_name).first()
     is_new_company = False
     if not company:
-        company = Company(name=user_in.company_name)
+        company = Company(name=user_in.company_name, api_key=secrets.token_urlsafe(24))
         db.add(company)
         db.commit()
         db.refresh(company)

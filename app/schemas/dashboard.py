@@ -3,5 +3,6 @@ from pydantic import BaseModel
 
 class DashboardStats(BaseModel):
     total_leads: int
-    new_leads: int
-    emails_received: int
+    leads_today: int
+    emails_today: int
+    replies_sent: int
