@@ -26,19 +26,33 @@ def test_chat_message_returns_reply(monkeypatch) -> None:
 def test_chat_lead_creates_lead(monkeypatch) -> None:
     client = _create_client(monkeypatch, "./test_chat_lead.db")
 
+    from app.core.database import SessionLocal
+    from app.models.company import Company
+
+    session = SessionLocal()
+    try:
+        company = Company(name="Acme Inc", api_key="test-company-key")
+        session.add(company)
+        session.commit()
+    finally:
+        session.close()
+
     payload = {
         "name": "Taylor",
         "email": "taylor@example.com",
         "message": "Interested in pricing",
         "company": "Acme Inc",
     }
-    response = client.post("/api/chat/lead", json=payload)
+    response = client.post(
+        "/api/chat/lead",
+        json=payload,
+        headers={"X-Company-Key": "test-company-key"},
+    )
 
     assert response.status_code == 201
     data = response.json()
     assert "id" in data
 
-    from app.core.database import SessionLocal
     from app.models.lead import Lead
 
     session = SessionLocal()
@@ -47,5 +61,6 @@ def test_chat_lead_creates_lead(monkeypatch) -> None:
         assert lead is not None
         assert lead.email == payload["email"]
         assert lead.source == "chat"
+        assert lead.company_id is not None
     finally:
         session.close()

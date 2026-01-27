@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.orm import Session
-from app.core.deps import get_db
+from app.core.deps import get_company_from_api_key, get_db
 from app.core.limiter import limiter
 from app.models.lead import Lead
 from app.schemas.chat import ChatLeadCreate, ChatMessageRequest, ChatMessageResponse
@@ -25,6 +25,7 @@ def chat_message(
 def chat_lead(
     payload: ChatLeadCreate,
     request: Request,
+    company=Depends(get_company_from_api_key),
     db: Session = Depends(get_db),
 ) -> dict[str, int]:
     summary_parts: list[str] = []
@@ -38,6 +39,7 @@ def chat_lead(
         name=payload.name,
         email=payload.email,
         message=payload.message,
+        company_id=company.id,
         source="chat",
         conversation_summary=conversation_summary,
     )
