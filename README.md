@@ -11,6 +11,8 @@ docker compose up --build
 
 The API will be available at `http://127.0.0.1:8000/docs` and the frontend at `http://127.0.0.1:5173`.
 
+The Docker stack uses PostgreSQL and Redis by default. SQLite is not used in Docker.
+
 ## Backend (FastAPI)
 
 ### Local development (venv)
@@ -55,13 +57,16 @@ curl -X POST http://127.0.0.1:8000/auth/login \
   -d "username=operator@example.com&password=change-me"
 ```
 
-#### Create an auto-reply template (admin only)
+#### Create a response template (admin only)
 
 ```bash
-curl -X POST http://127.0.0.1:8000/auto-replies \
+curl -X POST http://127.0.0.1:8000/templates \
   -H "Authorization: Bearer <TOKEN>" \
   -H "Content-Type: application/json" \
   -d '{
+    "name": "Inbound sales follow-up",
+    "category": "sales",
+    "tone": "Professional",
     "trigger_type": "lead",
     "subject_template": "Thanks, {name}!",
     "body_template": "We received your inquiry about {source}."
@@ -165,7 +170,20 @@ Use the production compose file to run Postgres, Redis, API, Celery worker, and 
 docker compose -f docker-compose.prod.yml up --build
 ```
 
-Set `ALLOWED_ORIGINS` to your frontend domain and update the `.env` secrets before deploying.
+Set `ALLOWED_ORIGINS` to your frontend domain and update the `.env` secrets before deploying. The production frontend is built with `VITE_API_URL=/api`, which is proxied to the FastAPI container by Nginx.
+
+## Environment variables
+
+Create a `.env` file from `.env.example` and update secrets as needed:
+
+```bash
+APP_NAME=Business Automation Portal
+SECRET_KEY=change-this-secret
+DATABASE_URL=postgresql+psycopg2://postgres:postgres@db:5432/automation
+REDIS_URL=redis://redis:6379/0
+AI_API_KEY=change-this-key
+ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+```
 
 ## AI Chat Assistant
 

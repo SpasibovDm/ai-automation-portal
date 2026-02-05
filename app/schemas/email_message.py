@@ -37,6 +37,11 @@ class EmailMessageRead(EmailMessageBase):
     processed: bool
     lead_id: Optional[int] = None
     company_id: Optional[int] = None
+    preview: Optional[str] = None
+    status: Optional[str] = None
+    category: Optional[str] = None
+    priority: Optional[str] = None
+    confidence: Optional[int] = None
     replies: list[EmailReplyRead] = Field(default_factory=list)
 
     class Config:
@@ -55,3 +60,16 @@ class EmailReceiveResponse(BaseModel):
 
 class EmailThreadRead(BaseModel):
     email: EmailMessageRead
+
+
+class EmailAnalysis(BaseModel):
+    category: str
+    priority: str
+    summary: str
+    confidence: int
+    ai_reply_suggestion: str
+
+
+class EmailReplyGenerated(BaseModel):
+    reply: EmailReplyRead
+    confidence: int

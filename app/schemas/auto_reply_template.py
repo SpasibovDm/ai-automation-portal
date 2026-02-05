@@ -4,6 +4,9 @@ from pydantic import BaseModel
 
 
 class AutoReplyTemplateBase(BaseModel):
+    name: str | None = None
+    category: str | None = None
+    tone: str | None = None
     trigger_type: str
     subject_template: str
     body_template: str
@@ -14,6 +17,9 @@ class AutoReplyTemplateCreate(AutoReplyTemplateBase):
 
 
 class AutoReplyTemplateUpdate(BaseModel):
+    name: str | None = None
+    category: str | None = None
+    tone: str | None = None
     trigger_type: str | None = None
     subject_template: str | None = None
     body_template: str | None = None

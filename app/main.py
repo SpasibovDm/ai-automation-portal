@@ -11,6 +11,7 @@ from slowapi.middleware import SlowAPIMiddleware
 import sentry_sdk
 
 from app.core.config import settings
+from app.core.logging_config import configure_logging
 from app.core.limiter import limiter
 from app.core.database import Base, engine
 from app.models import (
@@ -23,15 +24,25 @@ from app.models import (
     lead,
     user,
 )
-from app.routes import auth, auto_replies, chat, companies, dashboard, emails, integrations, leads, public, users
+from app.routes import (
+    analytics,
+    auth,
+    auto_replies,
+    chat,
+    companies,
+    dashboard,
+    emails,
+    integrations,
+    leads,
+    public,
+    templates,
+    users,
+)
 
 if settings.database_url.startswith("sqlite"):
     Base.metadata.create_all(bind=engine)
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
-)
+configure_logging()
 
 app = FastAPI(title=settings.app_name)
 app.state.limiter = limiter
@@ -95,6 +106,8 @@ app.include_router(dashboard.router)
 app.include_router(companies.router)
 app.include_router(chat.router)
 app.include_router(integrations.router)
+app.include_router(analytics.router)
+app.include_router(templates.router)
 
 
 @app.get("/")

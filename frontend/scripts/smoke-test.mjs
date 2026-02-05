@@ -7,6 +7,11 @@ const requiredFiles = [
   "main.jsx",
   path.join("components", "Layout.jsx"),
   path.join("pages", "Dashboard.jsx"),
+  path.join("pages", "Leads.jsx"),
+  path.join("pages", "Emails.jsx"),
+  path.join("pages", "Templates.jsx"),
+  path.join("pages", "Analytics.jsx"),
+  path.join("pages", "Settings.jsx"),
 ];
 
 const missing = requiredFiles.filter((file) => !fs.existsSync(path.join(root, file)));

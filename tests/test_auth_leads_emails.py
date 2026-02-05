@@ -83,16 +83,18 @@ def test_email_processing_flow(monkeypatch) -> None:
     assert connect.status_code == 201
 
     template = client.post(
-        "/auto-replies",
+        "/templates",
         json={
             "name": "Email template",
+            "category": "support",
+            "tone": "Professional",
             "trigger_type": "email",
             "subject_template": "Re: {subject}",
             "body_template": "Thanks {email}",
         },
         headers={"Authorization": f"Bearer {token}"},
     )
-    assert template.status_code == 200
+    assert template.status_code == 201
 
     webhook = client.post(
         "/webhook/email",

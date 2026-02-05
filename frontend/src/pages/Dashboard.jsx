@@ -11,7 +11,12 @@ import {
 import Skeleton from "../components/Skeleton";
 import StatCard from "../components/StatCard";
 import StatusBadge from "../components/StatusBadge";
-import { getDashboardActivity, getDashboardStats, getDashboardUrgent } from "../services/api";
+import {
+  getAnalyticsOverview,
+  getDashboardActivity,
+  getDashboardStats,
+  getDashboardUrgent,
+} from "../services/api";
 
 const Dashboard = () => {
   const [stats, setStats] = useState({
@@ -20,105 +25,63 @@ const Dashboard = () => {
     emails_today: 0,
     replies_sent: 0,
   });
+  const [overview, setOverview] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [overviewLoading, setOverviewLoading] = useState(true);
   const [error, setError] = useState("");
+  const [overviewError, setOverviewError] = useState("");
   const [activityFeed, setActivityFeed] = useState([]);
+  const [recentActivity, setRecentActivity] = useState([]);
   const [urgentItems, setUrgentItems] = useState([]);
   const [activityLoading, setActivityLoading] = useState(true);
   const [urgentLoading, setUrgentLoading] = useState(true);
   const [activityError, setActivityError] = useState("");
   const [urgentError, setUrgentError] = useState("");
+  const [lastUpdated, setLastUpdated] = useState(null);
   const lineChartRef = useRef(null);
   const barChartRef = useRef(null);
   const lineInstance = useRef(null);
   const barInstance = useRef(null);
 
-  const leadTrendData = useMemo(
-    () => ({
-      labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-      values: [14, 20, 18, 25, 31, 27, 22],
-    }),
-    []
-  );
+  const leadTrendData = useMemo(() => {
+    if (!overview?.lead_trend) {
+      return { labels: [], values: [] };
+    }
+    const labels = overview.lead_trend.map((point) =>
+      new Date(point.date).toLocaleDateString(undefined, { weekday: "short" })
+    );
+    const values = overview.lead_trend.map((point) => point.count);
+    return { labels, values };
+  }, [overview]);
 
-  const emailCategoryData = useMemo(
-    () => ({
-      labels: ["Lead", "Support", "Billing", "Other"],
-      values: [34, 21, 12, 8],
-    }),
-    []
-  );
-
-  const recentActivity = useMemo(
-    () => [
-      {
-        title: "AI replied to a new lead",
-        detail: "Pricing inquiry from HubSpot form",
-        time: "2 min ago",
-      },
-      {
-        title: "New email received",
-        detail: "Support request · onboarding@acme.io",
-        time: "25 min ago",
-      },
-      {
-        title: "Template updated",
-        detail: "New lead follow-up v2",
-        time: "1 hour ago",
-      },
-    ],
-    []
-  );
-
-  const aiActivity = useMemo(
-    () => [
-      { message: "AI classified 5 emails", time: "Today, 9:42 AM" },
-      { message: "AI generated 3 replies", time: "Today, 10:15 AM" },
-      { message: "AI suggested 2 follow-ups", time: "Today, 12:30 PM" },
-    ],
-    []
-  );
-
-  const fallbackActivityFeed = useMemo(
-    () => [
-      { title: "AI classified email", detail: "Lead inquiry · /sales", time: "Just now" },
-      { title: "AI generated reply", detail: "Follow-up to trial request", time: "12 min ago" },
-      { title: "New lead detected", detail: "Inbound chat widget", time: "35 min ago" },
-    ],
-    []
-  );
-
-  const fallbackUrgentItems = useMemo(
-    () => [
-      {
-        title: "Emails waiting for approval",
-        detail: "5 replies queued · 2 high priority",
-        level: "high",
-      },
-      {
-        title: "Leads without reply > 24h",
-        detail: "3 leads need a follow-up sequence",
-        level: "medium",
-      },
-      {
-        title: "Low confidence AI replies",
-        detail: "2 drafts below 70% confidence",
-        level: "low",
-      },
-    ],
-    []
-  );
+  const emailCategoryData = useMemo(() => {
+    if (!overview?.email_category_breakdown) {
+      return { labels: [], values: [] };
+    }
+    return {
+      labels: overview.email_category_breakdown.map((item) => item.category),
+      values: overview.email_category_breakdown.map((item) => item.count),
+    };
+  }, [overview]);
 
   const pendingActions = useMemo(
     () => Math.max(stats.total_leads - stats.replies_sent, 0),
     [stats]
   );
 
+  const autoReplyRate = useMemo(() => {
+    if (!overview?.emails_processed) {
+      return 0;
+    }
+    return Math.round((overview.emails_auto_replied / overview.emails_processed) * 100);
+  }, [overview]);
+
   useEffect(() => {
     const loadStats = async () => {
       try {
         const data = await getDashboardStats();
         setStats(data);
+        setLastUpdated(new Date());
       } catch (err) {
         setError("Unable to load dashboard metrics.");
       } finally {
@@ -129,34 +92,47 @@ const Dashboard = () => {
   }, []);
 
   useEffect(() => {
+    const loadOverview = async () => {
+      try {
+        const data = await getAnalyticsOverview();
+        setOverview(data);
+      } catch (err) {
+        setOverviewError("Unable to load performance trends.");
+      } finally {
+        setOverviewLoading(false);
+      }
+    };
+    loadOverview();
+  }, []);
+
+  useEffect(() => {
     const loadActivity = async () => {
       try {
         const data = await getDashboardActivity();
-        setActivityFeed(data);
+        setActivityFeed(data.ai_activity || []);
+        setRecentActivity(data.recent_activity || []);
       } catch (err) {
         setActivityError("Unable to load AI activity.");
-        setActivityFeed(fallbackActivityFeed);
       } finally {
         setActivityLoading(false);
       }
     };
     loadActivity();
-  }, [fallbackActivityFeed]);
+  }, []);
 
   useEffect(() => {
     const loadUrgent = async () => {
       try {
         const data = await getDashboardUrgent();
-        setUrgentItems(data);
+        setUrgentItems(data.items || []);
       } catch (err) {
         setUrgentError("Unable to load urgent items.");
-        setUrgentItems(fallbackUrgentItems);
       } finally {
         setUrgentLoading(false);
       }
     };
     loadUrgent();
-  }, [fallbackUrgentItems]);
+  }, []);
 
   useEffect(() => {
     const Chart = window.Chart;
@@ -175,9 +151,9 @@ const Dashboard = () => {
             label: "Leads",
             data: leadTrendData.values,
             borderColor: "#6366f1",
-            backgroundColor: "rgba(99, 102, 241, 0.2)",
+            backgroundColor: "rgba(99, 102, 241, 0.18)",
             fill: true,
-            tension: 0.4,
+            tension: 0.35,
             pointRadius: 3,
           },
         ],
@@ -220,7 +196,8 @@ const Dashboard = () => {
             label: "Emails",
             data: emailCategoryData.values,
             backgroundColor: "#818cf8",
-            borderRadius: 8,
+            borderRadius: 10,
+            barThickness: 22,
           },
         ],
       },
@@ -254,7 +231,9 @@ const Dashboard = () => {
         </div>
         <div className="hidden items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs text-slate-500 md:flex">
           <ClockIcon className="h-4 w-4" />
-          Updated just now
+          {lastUpdated
+            ? `Updated ${lastUpdated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+            : "Syncing data"}
         </div>
       </div>
 
@@ -277,21 +256,21 @@ const Dashboard = () => {
             value={stats.leads_today}
             icon={<UserPlusIcon className="h-5 w-5" />}
             helper="High intent contacts"
-            trend="+18%"
+            trend={`${stats.total_leads} total`}
           />
           <StatCard
             label="Emails Processed"
             value={stats.emails_today}
             icon={<MailIcon className="h-5 w-5" />}
             helper="Last 24 hours"
-            trend="+12%"
+            trend={`${overview?.emails_processed || 0} in 30 days`}
           />
           <StatCard
             label="AI Replies Sent"
             value={stats.replies_sent}
             icon={<BotIcon className="h-5 w-5" />}
-            helper="Quality score 94%"
-            trend="+6%"
+            helper="Generated by AI"
+            trend={`${autoReplyRate}% auto-replied`}
           />
           <StatCard
             label="Pending Actions"
@@ -309,10 +288,22 @@ const Dashboard = () => {
               <h3 className="text-sm font-semibold text-slate-900">Leads per day</h3>
               <p className="text-xs text-slate-500">Last 7 days conversion funnel</p>
             </div>
-            <span className="text-xs text-emerald-600">+8.4% vs last week</span>
+            <span className="text-xs text-emerald-600">
+              {overview?.leads_generated || 0} leads in 30 days
+            </span>
           </div>
           <div className="mt-6 h-64">
-            <canvas ref={lineChartRef} />
+            {overviewLoading ? (
+              <Skeleton className="h-64" />
+            ) : leadTrendData.values.length ? (
+              <canvas ref={lineChartRef} />
+            ) : (
+              <EmptyState
+                title="No lead activity"
+                description="Leads will appear once inbound traffic starts."
+                icon={<UserPlusIcon className="h-6 w-6" />}
+              />
+            )}
           </div>
         </div>
         <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-md">
@@ -321,7 +312,17 @@ const Dashboard = () => {
             <p className="text-xs text-slate-500">Distribution of inbound conversations</p>
           </div>
           <div className="mt-6 h-64">
-            <canvas ref={barChartRef} />
+            {overviewLoading ? (
+              <Skeleton className="h-64" />
+            ) : emailCategoryData.values.length ? (
+              <canvas ref={barChartRef} />
+            ) : (
+              <EmptyState
+                title="No emails yet"
+                description="Once an inbox is connected, categories will populate here."
+                icon={<MailIcon className="h-6 w-6" />}
+              />
+            )}
           </div>
         </div>
       </div>
@@ -348,20 +349,33 @@ const Dashboard = () => {
             </div>
           ) : activityError && !activityFeed.length ? (
             <div className="mt-6 text-xs text-rose-500">{activityError}</div>
-          ) : (
+          ) : activityFeed.length ? (
             <div className="mt-6 space-y-4">
               {activityFeed.map((activity) => (
                 <div
-                  key={`${activity.title}-${activity.time}`}
+                  key={`${activity.title}-${activity.id}`}
                   className="flex items-start justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3"
                 >
                   <div>
                     <p className="text-sm font-medium text-slate-900">{activity.title}</p>
                     <p className="text-xs text-slate-500">{activity.detail}</p>
                   </div>
-                  <span className="text-xs text-slate-400">{activity.time}</span>
+                  <span className="text-xs text-slate-400">
+                    {new Date(activity.created_at).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
                 </div>
               ))}
+            </div>
+          ) : (
+            <div className="mt-6">
+              <EmptyState
+                title="No AI activity yet"
+                description="AI events will show up as soon as automation kicks in."
+                icon={<SparklesIcon className="h-6 w-6" />}
+              />
             </div>
           )}
         </div>
@@ -381,7 +395,7 @@ const Dashboard = () => {
             </div>
           ) : urgentError && !urgentItems.length ? (
             <div className="mt-6 text-xs text-rose-500">{urgentError}</div>
-          ) : (
+          ) : urgentItems.length ? (
             <div className="mt-6 space-y-3">
               {urgentItems.map((item) => (
                 <div
@@ -395,6 +409,14 @@ const Dashboard = () => {
                   <StatusBadge status={item.level} label={item.level} />
                 </div>
               ))}
+            </div>
+          ) : (
+            <div className="mt-6">
+              <EmptyState
+                title="All clear"
+                description="No urgent items are waiting for review."
+                icon={<SparklesIcon className="h-6 w-6" />}
+              />
             </div>
           )}
         </div>
@@ -414,45 +436,75 @@ const Dashboard = () => {
               View all
             </button>
           </div>
-          <div className="mt-6 space-y-4">
-            {recentActivity.map((activity) => (
-              <div
-                key={activity.title}
-                className="flex items-start justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3"
-              >
-                <div>
-                  <p className="text-sm font-medium text-slate-900">{activity.title}</p>
-                  <p className="text-xs text-slate-500">{activity.detail}</p>
+          {activityLoading ? (
+            <div className="mt-6 space-y-3">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <Skeleton key={`recent-skeleton-${index}`} className="h-14" />
+              ))}
+            </div>
+          ) : recentActivity.length ? (
+            <div className="mt-6 space-y-4">
+              {recentActivity.map((activity) => (
+                <div
+                  key={`${activity.title}-${activity.id}`}
+                  className="flex items-start justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-slate-900">{activity.title}</p>
+                    <p className="text-xs text-slate-500">{activity.detail}</p>
+                  </div>
+                  <span className="text-xs text-slate-400">
+                    {new Date(activity.created_at).toLocaleDateString()}
+                  </span>
                 </div>
-                <span className="text-xs text-slate-400">{activity.time}</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-6">
+              <EmptyState
+                title="No events yet"
+                description="New activity will appear as the team engages leads."
+                icon={<SparklesIcon className="h-6 w-6" />}
+              />
+            </div>
+          )}
         </div>
         <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-md">
           <div className="flex items-center gap-2">
             <BotIcon className="h-5 w-5 text-indigo-500" />
             <div>
-              <h3 className="text-sm font-semibold text-slate-900">AI activity</h3>
-              <p className="text-xs text-slate-500">Automation visibility</p>
+              <h3 className="text-sm font-semibold text-slate-900">Automation pulse</h3>
+              <p className="text-xs text-slate-500">AI performance highlights</p>
             </div>
           </div>
-          <div className="mt-6 space-y-3">
-            {aiActivity.map((activity) => (
-              <div
-                key={activity.message}
-                className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3"
-              >
-                <div className="flex items-center gap-2 text-sm text-slate-700">
-                  <span role="img" aria-label="robot">
-                    🤖
-                  </span>
-                  {activity.message}
-                </div>
-                <span className="text-xs text-slate-400">{activity.time}</span>
+          {overviewLoading ? (
+            <div className="mt-6 space-y-3">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <Skeleton key={`pulse-skeleton-${index}`} className="h-12" />
+              ))}
+            </div>
+          ) : overview ? (
+            <div className="mt-6 space-y-3 text-sm text-slate-600">
+              <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+                <span>AI accuracy</span>
+                <span className="font-semibold text-slate-800">
+                  {Math.round((overview.ai_accuracy || 0) * 100)}%
+                </span>
               </div>
-            ))}
-          </div>
+              <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+                <span>Time saved</span>
+                <span className="font-semibold text-slate-800">
+                  {overview.time_saved_hours} hrs
+                </span>
+              </div>
+              <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+                <span>Auto-reply rate</span>
+                <span className="font-semibold text-slate-800">{autoReplyRate}%</span>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-6 text-xs text-rose-500">{overviewError}</div>
+          )}
         </div>
       </div>
     </div>

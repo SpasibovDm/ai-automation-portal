@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from "react";
 
+import Button from "../components/Button";
+import Card from "../components/Card";
+import Spinner from "../components/Spinner";
 import { createTemplate, deleteTemplate, getTemplates, updateTemplate } from "../services/api";
 
 const Templates = () => {
@@ -9,6 +12,7 @@ const Templates = () => {
     name: "",
     category: "sales",
     tone: "Professional",
+    subject_template: "Re: {subject}",
     body_template: "",
   });
   const [error, setError] = useState("");
@@ -44,10 +48,16 @@ const Templates = () => {
       const created = await createTemplate({
         ...formState,
         trigger_type: "email",
-        subject_template: formState.name,
+        subject_template: formState.subject_template || formState.name,
       });
       setTemplates((prev) => [created, ...prev]);
-      setFormState({ name: "", category: "sales", tone: "Professional", body_template: "" });
+      setFormState({
+        name: "",
+        category: "sales",
+        tone: "Professional",
+        subject_template: "Re: {subject}",
+        body_template: "",
+      });
     } catch (err) {
       setError("Unable to save template.");
     } finally {
@@ -69,7 +79,7 @@ const Templates = () => {
       category: template.category,
       tone: template.tone,
       trigger_type: template.trigger_type || "email",
-      subject_template: template.name || template.subject_template,
+      subject_template: template.subject_template || template.name || "Re: {subject}",
       body_template: template.body_template,
     });
     setTemplates((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
@@ -97,7 +107,7 @@ const Templates = () => {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100">
+        <Card>
           <div className="px-6 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
             <h3 className="text-sm font-semibold text-slate-700">Saved templates</h3>
             <select
@@ -114,7 +124,10 @@ const Templates = () => {
             </select>
           </div>
           {loading ? (
-            <div className="p-6 text-slate-500">Loading templates...</div>
+            <div className="p-6 flex items-center gap-2 text-slate-500">
+              <Spinner />
+              Loading templates...
+            </div>
           ) : error ? (
             <div className="p-6 text-sm text-red-600">{error}</div>
           ) : (
@@ -132,20 +145,20 @@ const Templates = () => {
                         </p>
                       </div>
                       <div className="flex gap-2">
-                        <button
-                          type="button"
+                        <Button
                           onClick={() => handleSave(template)}
-                          className="rounded-lg border border-slate-200 px-3 py-1 text-xs text-slate-600"
+                          variant="secondary"
+                          className="rounded-lg px-3 py-1 text-xs"
                         >
                           Save
-                        </button>
-                        <button
-                          type="button"
+                        </Button>
+                        <Button
                           onClick={() => handleDelete(template.id)}
-                          className="rounded-lg border border-slate-200 px-3 py-1 text-xs text-red-500"
+                          variant="danger"
+                          className="rounded-lg px-3 py-1 text-xs"
                         >
                           Delete
-                        </button>
+                        </Button>
                       </div>
                     </div>
                     <div className="grid gap-3 md:grid-cols-2">
@@ -185,6 +198,20 @@ const Templates = () => {
                           className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
                         />
                       </div>
+                      <div>
+                        <label className="text-xs text-slate-500">Subject template</label>
+                        <input
+                          value={template.subject_template || "Re: {subject}"}
+                          onChange={(event) =>
+                            handleTemplateChange(
+                              template.id,
+                              "subject_template",
+                              event.target.value
+                            )
+                          }
+                          className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                        />
+                      </div>
                       <div className="md:col-span-2">
                         <label className="text-xs text-slate-500">
                           Template body (variables supported)
@@ -210,8 +237,8 @@ const Templates = () => {
               )}
             </div>
           )}
-        </div>
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+        </Card>
+        <Card className="p-6">
           <h3 className="text-sm font-semibold text-slate-700">New response template</h3>
           <form className="mt-4 space-y-4" onSubmit={handleSubmit}>
             <div>
@@ -254,6 +281,17 @@ const Templates = () => {
               </div>
             </div>
             <div>
+              <label className="text-sm font-medium text-slate-600">Subject template</label>
+              <input
+                name="subject_template"
+                value={formState.subject_template}
+                onChange={handleChange}
+                className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                placeholder="Re: {subject}"
+                required
+              />
+            </div>
+            <div>
               <label className="text-sm font-medium text-slate-600">
                 Template body with variables
               </label>
@@ -267,15 +305,15 @@ const Templates = () => {
                 required
               />
             </div>
-            <button
+            <Button
               type="submit"
-              className="w-full rounded-lg bg-slate-900 text-white py-2 text-sm font-medium"
+              className="w-full rounded-lg py-2 text-sm font-medium"
               disabled={saving}
             >
               {saving ? "Saving..." : "Save template"}
-            </button>
+            </Button>
           </form>
-        </div>
+        </Card>
       </div>
     </div>
   );

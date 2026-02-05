@@ -3,6 +3,8 @@ version: "3.9"
 services:
   api:
     build: .
+    env_file:
+      - .env
     environment:
       DATABASE_URL: postgresql+psycopg2://postgres:postgres@db:5432/automation
       REDIS_URL: redis://redis:6379/0
@@ -10,16 +12,20 @@ services:
     depends_on:
       - db
       - redis
+    restart: unless-stopped
 
   worker:
     build: .
     command: celery -A app.tasks worker --loglevel=info
+    env_file:
+      - .env
     environment:
       DATABASE_URL: postgresql+psycopg2://postgres:postgres@db:5432/automation
       REDIS_URL: redis://redis:6379/0
     depends_on:
       - db
       - redis
+    restart: unless-stopped
 
   frontend:
     build:
@@ -30,6 +36,7 @@ services:
       - api
     ports:
       - "80:80"
+    restart: unless-stopped
 
   db:
     image: postgres:16
@@ -39,9 +46,11 @@ services:
       POSTGRES_PASSWORD: postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
+    restart: unless-stopped
 
 volumes:
   postgres_data:

@@ -33,6 +33,10 @@ class LeadUpdate(BaseModel):
     tags: Optional[list[str]] = None
 
 
+class LeadStatusUpdate(BaseModel):
+    status: str
+
+
 class LeadRead(LeadBase):
     id: int
     status: str
@@ -51,3 +55,13 @@ class AutoReplyPreview(BaseModel):
 class LeadCreateResponse(BaseModel):
     lead: LeadRead
     auto_reply: Optional[AutoReplyPreview] = None
+
+
+class LeadEmailRead(BaseModel):
+    id: int
+    subject: str
+    received_at: datetime
+    preview: str
+
+    class Config:
+        orm_mode = True

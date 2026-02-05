@@ -48,8 +48,11 @@ def generate_ai_reply_from_template(
     context: Dict[str, str],
 ) -> Dict[str, str]:
     base = generate_reply(template, context)
+    tone_line = f"Tone: {template.tone}\n" if template.tone else ""
+    category_line = f"Category: {template.category}\n" if template.category else ""
     prompt = (
         f"{company.ai_prompt_template}\n"
+        f"{tone_line}{category_line}"
         f"Subject suggestion: {base['subject']}\n"
         f"Context:\n{context}\n\n"
         "Draft a helpful, concise reply."

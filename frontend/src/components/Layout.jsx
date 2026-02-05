@@ -54,7 +54,7 @@ const Layout = () => {
 
   return (
     <ToastProvider>
-      <div className="min-h-screen bg-slate-50 text-slate-900 flex">
+      <div className="min-h-screen bg-slate-50 text-slate-900 flex app-shell">
         <div
           className={`fixed inset-0 z-40 bg-slate-900/40 transition-opacity md:hidden ${
             isSidebarOpen ? "opacity-100" : "pointer-events-none opacity-0"

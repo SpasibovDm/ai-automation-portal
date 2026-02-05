@@ -110,27 +110,27 @@ export const getEmailAnalysis = async (emailId) => {
 };
 
 export const regenerateEmailReply = async (emailId) => {
-  const response = await api.post(`/emails/${emailId}/regenerate-reply`);
+  const response = await api.post(`/emails/${emailId}/generate-reply`);
   return response.data;
 };
 
 export const getTemplates = async () => {
-  const response = await api.get("/auto-replies");
+  const response = await api.get("/templates");
   return response.data;
 };
 
 export const createTemplate = async (payload) => {
-  const response = await api.post("/auto-replies", payload);
+  const response = await api.post("/templates", payload);
   return response.data;
 };
 
 export const updateTemplate = async (templateId, payload) => {
-  const response = await api.put(`/auto-replies/${templateId}`, payload);
+  const response = await api.put(`/templates/${templateId}`, payload);
   return response.data;
 };
 
 export const deleteTemplate = async (templateId) => {
-  await api.delete(`/auto-replies/${templateId}`);
+  await api.delete(`/templates/${templateId}`);
 };
 
 export const getAnalyticsOverview = async () => {

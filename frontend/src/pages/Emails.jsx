@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 
+import Badge from "../components/Badge";
 import EmptyState from "../components/EmptyState";
 import { MailIcon, ReplyIcon, SendIcon, SparklesIcon } from "../components/Icons";
 import Skeleton from "../components/Skeleton";
@@ -19,6 +20,8 @@ const Emails = () => {
   const [threadLoading, setThreadLoading] = useState(false);
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [analysis, setAnalysis] = useState(null);
+  const [draftReply, setDraftReply] = useState("");
+  const [draftConfidence, setDraftConfidence] = useState(null);
   const [error, setError] = useState("");
   const { addToast } = useToast();
 
@@ -52,14 +55,20 @@ const Emails = () => {
     const loadAnalysis = async () => {
       if (!selectedEmail?.id) {
         setAnalysis(null);
+        setDraftReply("");
+        setDraftConfidence(null);
         return;
       }
       setAnalysisLoading(true);
       try {
         const data = await getEmailAnalysis(selectedEmail.id);
         setAnalysis(data);
+        setDraftReply(data.ai_reply_suggestion || "");
+        setDraftConfidence(data.confidence || null);
       } catch (err) {
         setAnalysis(null);
+        setDraftReply("");
+        setDraftConfidence(null);
       } finally {
         setAnalysisLoading(false);
       }
@@ -94,10 +103,27 @@ const Emails = () => {
     });
     try {
       const updated = await regenerateEmailReply(selectedEmail.id);
+      if (updated?.reply?.body) {
+        setDraftReply(updated.reply.body);
+      }
+      if (updated?.confidence) {
+        setDraftConfidence(updated.confidence);
+      }
+      if (updated?.reply) {
+        setSelectedEmail((prev) => {
+          if (!prev) {
+            return prev;
+          }
+          return {
+            ...prev,
+            replies: [updated.reply, ...(prev.replies || [])],
+          };
+        });
+      }
       setAnalysis((prev) => ({
-        ...prev,
-        ai_reply_suggestion: updated.reply || prev?.ai_reply_suggestion,
-        confidence: updated.confidence || prev?.confidence,
+        ...(prev || {}),
+        ai_reply_suggestion: updated?.reply?.body || prev?.ai_reply_suggestion,
+        confidence: updated?.confidence || prev?.confidence,
       }));
     } catch (err) {
       addToast({
@@ -122,9 +148,9 @@ const Emails = () => {
   };
 
   const aiSuggestedReply =
+    draftReply ||
     analysis?.ai_reply_suggestion ||
-    selectedEmail?.ai_suggested_reply ||
-    "Thanks for reaching out! I can help you schedule a quick demo and share pricing details. Let me know a good time this week and your company size.";
+    "No AI suggestion yet. Generate a reply to get started.";
 
   return (
     <div className="space-y-6">
@@ -178,9 +204,9 @@ const Emails = () => {
                     </div>
                     <p className="text-xs text-slate-500">{email.from_email}</p>
                     <div className="mt-2 flex items-center gap-2">
-                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-500">
+                      <Badge variant="info" className="text-[11px]">
                         {category}
-                      </span>
+                      </Badge>
                       <StatusBadge status={status} />
                     </div>
                   </button>
@@ -217,7 +243,16 @@ const Emails = () => {
                       {new Date(selectedEmail.received_at).toLocaleString()}
                     </p>
                   </div>
-                  <StatusBadge status={getStatus(selectedEmail)} />
+                  <div className="flex flex-wrap items-center gap-2">
+                    <StatusBadge status={getStatus(selectedEmail)} />
+                    <StatusBadge
+                      status={analysis?.priority || selectedEmail.priority || "medium"}
+                      label={analysis?.priority || selectedEmail.priority || "medium"}
+                    />
+                    <span className="rounded-full border border-indigo-100 bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-600">
+                      {draftConfidence ? `${draftConfidence}% confidence` : "Confidence pending"}
+                    </span>
+                  </div>
                 </div>
                 <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-700">
                   {selectedEmail.body}
@@ -227,7 +262,15 @@ const Emails = () => {
                     <SparklesIcon className="h-4 w-4" />
                     AI Suggested Reply
                   </div>
-                  <p className="mt-2 text-sm text-slate-700">{aiSuggestedReply}</p>
+                  {analysisLoading ? (
+                    <div className="mt-3 space-y-2">
+                      <Skeleton className="h-4" />
+                      <Skeleton className="h-4 w-4/5" />
+                      <Skeleton className="h-4 w-3/5" />
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-sm text-slate-700">{aiSuggestedReply}</p>
+                  )}
                   <div className="mt-4 flex flex-wrap gap-3">
                     <button
                       type="button"
@@ -303,18 +346,18 @@ const Emails = () => {
                       <div className="flex items-center justify-between">
                         <span className="text-xs uppercase text-slate-400">AI Category</span>
                         <span className="font-medium text-slate-700">
-                          {analysis?.category || getCategory(selectedEmail)}
+                          {analysis?.category || selectedEmail.category || getCategory(selectedEmail)}
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-xs uppercase text-slate-400">Priority level</span>
-                        <StatusBadge status={analysis?.priority || "medium"} />
+                        <StatusBadge status={analysis?.priority || selectedEmail.priority || "medium"} />
                       </div>
                       <div>
                         <p className="text-xs uppercase text-slate-400">AI summary</p>
                         <p className="mt-2 rounded-xl border border-slate-100 bg-slate-50 p-3 text-sm text-slate-600">
                           {analysis?.summary ||
-                            "Customer asked about pricing tiers, onboarding support, and whether we integrate with their CRM."}
+                            "AI summary will appear after the analysis runs."}
                         </p>
                       </div>
                       <div>
@@ -326,7 +369,7 @@ const Emails = () => {
                       <div className="flex items-center justify-between">
                         <span className="text-xs uppercase text-slate-400">Confidence</span>
                         <span className="font-semibold text-slate-700">
-                          {analysis?.confidence ? `${analysis.confidence}%` : "86%"}
+                          {draftConfidence ? `${draftConfidence}%` : "Pending"}
                         </span>
                       </div>
                     </div>

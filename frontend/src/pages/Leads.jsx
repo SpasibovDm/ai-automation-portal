@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 
 import EmptyState from "../components/EmptyState";
-import { MessageSquareIcon, SearchIcon, UsersIcon } from "../components/Icons";
+import { SearchIcon, UsersIcon } from "../components/Icons";
 import Modal from "../components/Modal";
 import Skeleton from "../components/Skeleton";
 import StatusBadge from "../components/StatusBadge";
@@ -33,7 +33,7 @@ const Leads = () => {
   const emptyState = useMemo(
     () => ({
       title: "No leads yet",
-      description: "Install the chat widget to start receiving messages.",
+      description: "Install the chat widget or connect a form to start receiving leads.",
     }),
     []
   );
@@ -175,11 +175,9 @@ const Leads = () => {
               <tr>
                 <th className="text-left px-6 py-3 font-medium">Name</th>
                 <th className="text-left px-6 py-3 font-medium">Email</th>
-                <th className="text-left px-6 py-3 font-medium">Tags</th>
                 <th className="text-left px-6 py-3 font-medium">Source</th>
                 <th className="text-left px-6 py-3 font-medium">Status</th>
                 <th className="text-left px-6 py-3 font-medium">Created</th>
-                <th className="text-left px-6 py-3 font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -187,26 +185,11 @@ const Leads = () => {
                 filteredLeads.map((lead) => (
                   <tr
                     key={lead.id}
-                    className="border-t border-slate-100 transition hover:bg-slate-50"
+                    className="border-t border-slate-100 transition hover:bg-slate-50 cursor-pointer"
+                    onClick={() => handleViewLead(lead)}
                   >
                     <td className="px-6 py-4 font-medium text-slate-900">{lead.name}</td>
                     <td className="px-6 py-4 text-slate-600">{lead.email}</td>
-                    <td className="px-6 py-4">
-                      {lead.tags?.length ? (
-                        <div className="flex flex-wrap gap-2">
-                          {lead.tags.map((tag) => (
-                            <span
-                              key={`${lead.id}-${tag}`}
-                              className="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-600"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-xs text-slate-400">No tags</span>
-                      )}
-                    </td>
                     <td className="px-6 py-4 text-slate-600">
                       {lead.source || "Unknown"}
                     </td>
@@ -217,6 +200,7 @@ const Leads = () => {
                           className="rounded-lg border border-slate-200 px-3 py-1 text-xs text-slate-600"
                           value={lead.status}
                           onChange={(event) => handleStatusChange(lead.id, event.target.value)}
+                          onClick={(event) => event.stopPropagation()}
                         >
                           {statusOptions.map((option) => (
                             <option key={option} value={option}>
@@ -229,21 +213,11 @@ const Leads = () => {
                     <td className="px-6 py-4 text-slate-600">
                       {new Date(lead.created_at).toLocaleDateString()}
                     </td>
-                    <td className="px-6 py-4">
-                      <button
-                        type="button"
-                        onClick={() => handleViewLead(lead)}
-                        className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-600 hover:bg-slate-100"
-                      >
-                        <MessageSquareIcon className="h-3 w-3" />
-                        View
-                      </button>
-                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7} className="px-6 py-8">
+                  <td colSpan={5} className="px-6 py-8">
                     <EmptyState
                       title={emptyState.title}
                       description={emptyState.description}
@@ -268,6 +242,9 @@ const Leads = () => {
                 <p className="text-xs uppercase text-slate-400">Contact</p>
                 <p className="mt-1 font-medium text-slate-900">{selectedLead.name}</p>
                 <p className="text-sm">{selectedLead.email}</p>
+                {selectedLead.phone ? (
+                  <p className="text-sm text-slate-500">{selectedLead.phone}</p>
+                ) : null}
               </div>
               <div>
                 <p className="text-xs uppercase text-slate-400">Status</p>
@@ -278,31 +255,56 @@ const Leads = () => {
             </div>
             <div className="grid gap-4 md:grid-cols-3">
               <div>
-                <p className="text-xs uppercase text-slate-400">Company</p>
-                <p className="mt-1 font-medium text-slate-900">
-                  {selectedLead.company || "Unknown"}
-                </p>
-              </div>
-              <div>
                 <p className="text-xs uppercase text-slate-400">Source</p>
                 <p className="mt-1 font-medium text-slate-900">
                   {selectedLead.source || "Unknown"}
                 </p>
               </div>
               <div>
-                <p className="text-xs uppercase text-slate-400">Lead owner</p>
+                <p className="text-xs uppercase text-slate-400">Created</p>
                 <p className="mt-1 font-medium text-slate-900">
-                  {selectedLead.owner || "AI Routing"}
+                  {new Date(selectedLead.created_at).toLocaleString()}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs uppercase text-slate-400">Preferred language</p>
+                <p className="mt-1 font-medium text-slate-900">
+                  {selectedLead.preferred_language || "Not specified"}
                 </p>
               </div>
             </div>
             <div>
               <p className="text-xs uppercase text-slate-400">AI summary</p>
               <p className="mt-2 rounded-xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-600">
-                {selectedLead.ai_summary ||
+                {selectedLead.conversation_summary ||
                   selectedLead.message ||
-                  "Lead asked about pricing and onboarding. AI suggested a personalized demo and sent a follow-up email."}
+                  "No conversation summary available yet."}
               </p>
+            </div>
+            {selectedLead.message ? (
+              <div>
+                <p className="text-xs uppercase text-slate-400">Lead message</p>
+                <p className="mt-2 rounded-xl border border-slate-100 bg-white p-4 text-sm text-slate-600">
+                  {selectedLead.message}
+                </p>
+              </div>
+            ) : null}
+            <div>
+              <p className="text-xs uppercase text-slate-400">Tags</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {selectedLead.tags?.length ? (
+                  selectedLead.tags.map((tag) => (
+                    <span
+                      key={`${selectedLead.id}-${tag}`}
+                      className="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-600"
+                    >
+                      {tag}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-xs text-slate-400">No tags yet.</span>
+                )}
+              </div>
             </div>
             <div>
               <p className="text-xs uppercase text-slate-400">Email history</p>
