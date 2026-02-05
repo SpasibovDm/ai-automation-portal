@@ -159,3 +159,11 @@ export const ToggleLeftIcon = ({ className }) => (
     <circle cx="8" cy="12" r="3" />
   </IconBase>
 );
+
+export const LogOutIcon = ({ className }) => (
+  <IconBase className={className}>
+    <path d="M16 17l5-5-5-5" />
+    <path d="M21 12H9" />
+    <path d="M13 5H7a2 2 0 00-2 2v10a2 2 0 002 2h6" />
+  </IconBase>
+);

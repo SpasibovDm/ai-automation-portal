@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-import { login } from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { signIn } = useAuth();
   const [formState, setFormState] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -18,9 +19,7 @@ const Login = () => {
     setError("");
     setLoading(true);
     try {
-      const data = await login(formState.email, formState.password);
-      localStorage.setItem("accessToken", data.access_token);
-      localStorage.setItem("refreshToken", data.refresh_token);
+      await signIn(formState.email, formState.password);
       navigate("/dashboard");
     } catch (err) {
       setError("Login failed. Please check your credentials.");
@@ -30,13 +29,16 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4">
-      <div className="bg-white rounded-3xl shadow-xl w-full max-w-md p-8">
-        <h1 className="text-2xl font-semibold text-slate-900">Welcome back</h1>
-        <p className="text-sm text-slate-500 mt-2">
-          Sign in to manage leads, inbox automation, and AI replies.
-        </p>
-        <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
+      <div className="w-full max-w-md rounded-3xl border border-slate-100 bg-white p-8 shadow-xl">
+        <div className="mb-6">
+          <p className="text-xs uppercase tracking-[0.3em] text-slate-400">AI Automation Portal</p>
+          <h1 className="mt-3 text-2xl font-semibold text-slate-900">Welcome back</h1>
+          <p className="text-sm text-slate-500 mt-2">
+            Sign in to manage leads, inbox automation, and AI replies.
+          </p>
+        </div>
+        <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
             <label className="text-sm font-medium text-slate-700">Email</label>
             <input
@@ -62,7 +64,7 @@ const Login = () => {
           {error && <p className="text-sm text-red-600">{error}</p>}
           <button
             type="submit"
-            className="w-full rounded-lg bg-slate-900 text-white py-2 font-medium hover:bg-slate-800"
+            className="w-full rounded-lg bg-indigo-600 text-white py-2 font-medium hover:bg-indigo-500"
             disabled={loading}
           >
             {loading ? "Signing in..." : "Sign in"}

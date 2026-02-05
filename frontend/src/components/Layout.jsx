@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import ChatWidget from "./ChatWidget";
 import {
@@ -8,12 +8,14 @@ import {
   FileTextIcon,
   LayoutDashboardIcon,
   LineChartIcon,
+  LogOutIcon,
   MailIcon,
   MenuIcon,
   SettingsIcon,
   UsersIcon,
 } from "./Icons";
 import { ToastProvider } from "./ToastContext";
+import { useAuth } from "../context/AuthContext";
 
 const navItems = [
   { label: "Dashboard", path: "/dashboard", icon: LayoutDashboardIcon },
@@ -22,10 +24,12 @@ const navItems = [
   { label: "Templates", path: "/templates", icon: FileTextIcon },
   { label: "Analytics", path: "/analytics", icon: LineChartIcon },
   { label: "Settings", path: "/settings", icon: SettingsIcon },
+  { label: "Logout", path: "/logout", icon: LogOutIcon, action: "logout" },
 ];
 
 const Layout = () => {
   const navigate = useNavigate();
+  const { signOut, user } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [companyName, setCompanyName] = useState(
@@ -33,8 +37,7 @@ const Layout = () => {
   );
 
   const handleLogout = () => {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
+    signOut();
     navigate("/login");
   };
 
@@ -51,6 +54,17 @@ const Layout = () => {
       window.removeEventListener("assistant-settings-updated", handleUpdate);
     };
   }, []);
+
+  const initials = useMemo(() => {
+    const email = user?.email || "JD";
+    return email
+      .split("@")[0]
+      .split(/[.\s_-]+/)
+      .map((part) => part[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
+  }, [user?.email]);
 
   return (
     <ToastProvider>
@@ -72,13 +86,26 @@ const Layout = () => {
               <BotIcon className="h-5 w-5" />
             </span>
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">SaaS</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">AI Automation Portal</p>
               <p>{companyName}</p>
             </div>
           </div>
           <nav className="mt-10 space-y-2 text-sm">
             {navItems.map((item) => {
               const Icon = item.icon;
+              if (item.action === "logout") {
+                return (
+                  <button
+                    key={`${item.label}-${item.path}`}
+                    type="button"
+                    onClick={handleLogout}
+                    className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                  >
+                    <Icon className="h-4 w-4" />
+                    {item.label}
+                  </button>
+                );
+              }
               return (
                 <NavLink
                   key={`${item.label}-${item.path}`}
@@ -97,15 +124,6 @@ const Layout = () => {
               );
             })}
           </nav>
-          <div className="mt-auto pt-10">
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:border-slate-300 hover:bg-slate-50"
-            >
-              Sign out
-            </button>
-          </div>
         </aside>
         <div className="flex min-h-screen flex-1 flex-col">
           <header className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200 bg-white/80 px-4 py-4 backdrop-blur md:px-8">
@@ -120,11 +138,9 @@ const Layout = () => {
               </button>
               <div>
                 <p className="text-xs uppercase tracking-[0.3em] text-slate-400">
-                  {companyName}
+                  AI Automation Portal
                 </p>
-                <h1 className="text-lg font-semibold text-slate-900">
-                  Automation Command Center
-                </h1>
+                <h1 className="text-lg font-semibold text-slate-900">{companyName}</h1>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -143,9 +159,9 @@ const Layout = () => {
                   className="flex items-center gap-3 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100"
                 >
                   <span className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 text-xs font-semibold text-white">
-                    JD
+                    {initials}
                   </span>
-                  <span className="hidden sm:inline">Jordan Doe</span>
+                  <span className="hidden sm:inline">{user?.email || "Workspace User"}</span>
                   <ChevronDownIcon className="h-4 w-4" />
                 </button>
                 {isUserMenuOpen && (

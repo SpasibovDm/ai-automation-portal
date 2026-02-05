@@ -1,14 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
 
+import Drawer from "../components/Drawer";
 import EmptyState from "../components/EmptyState";
 import { SearchIcon, UsersIcon } from "../components/Icons";
-import Modal from "../components/Modal";
 import Skeleton from "../components/Skeleton";
 import StatusBadge from "../components/StatusBadge";
 import { useToast } from "../components/ToastContext";
-import { getLeadEmails, getLeads, updateLeadStatus } from "../services/api";
+import { getEmailAnalysis, getLeadEmails, getLeads, updateLeadStatus } from "../services/api";
 
-const statusOptions = ["new", "contacted", "qualified", "won", "lost"];
+const statusOptions = ["new", "contacted", "qualified", "closed"];
 const dateOptions = [
   { value: "all", label: "All time" },
   { value: "7", label: "Last 7 days" },
@@ -25,9 +25,10 @@ const Leads = () => {
   const [dateFilter, setDateFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
   const [selectedLead, setSelectedLead] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [leadEmails, setLeadEmails] = useState([]);
   const [emailLoading, setEmailLoading] = useState(false);
+  const [aiReplyPreview, setAiReplyPreview] = useState("");
   const { addToast } = useToast();
 
   const emptyState = useMemo(
@@ -57,6 +58,9 @@ const Leads = () => {
     try {
       const updated = await updateLeadStatus(leadId, status);
       setLeads((prev) => prev.map((lead) => (lead.id === updated.id ? updated : lead)));
+      if (selectedLead?.id === leadId) {
+        setSelectedLead(updated);
+      }
       addToast({
         title: "Lead updated",
         description: `Status set to ${status}.`,
@@ -65,43 +69,61 @@ const Leads = () => {
       addToast({
         title: "Update failed",
         description: "We could not update the lead status.",
+        variant: "error",
       });
     }
   };
 
   const handleViewLead = async (lead) => {
     setSelectedLead(lead);
-    setIsModalOpen(true);
+    setIsDrawerOpen(true);
     setEmailLoading(true);
+    setAiReplyPreview("");
     try {
       const emails = await getLeadEmails(lead.id);
       setLeadEmails(emails);
+      if (emails.length) {
+        const analysis = await getEmailAnalysis(emails[0].id);
+        setAiReplyPreview(analysis.ai_reply_suggestion || "");
+      }
     } catch (err) {
       setLeadEmails([]);
+      setAiReplyPreview("");
     } finally {
       setEmailLoading(false);
     }
   };
 
   const sourceOptions = useMemo(() => {
-    const sources = leads
-      .map((lead) => lead.source)
-      .filter((source) => Boolean(source));
+    const sources = leads.map((lead) => lead.source).filter((source) => Boolean(source));
     return Array.from(new Set(sources));
   }, [leads]);
+
+  const extractCompany = (lead) => {
+    if (lead?.conversation_summary) {
+      const match = lead.conversation_summary.match(/Company:\s*([^|]+)/i);
+      if (match?.[1]) {
+        return match[1].trim();
+      }
+    }
+    if (lead?.email) {
+      const domain = lead.email.split("@")[1];
+      if (domain) {
+        return domain.split(".")[0].replace(/[-_]/g, " ");
+      }
+    }
+    return "Unknown";
+  };
 
   const filteredLeads = leads.filter((lead) => {
     const matchesStatus = statusFilter === "all" || lead.status === statusFilter;
     const search = query.toLowerCase();
     const matchesQuery =
-      !search ||
-      lead.name.toLowerCase().includes(search) ||
-      lead.email.toLowerCase().includes(search);
+      !search || lead.name.toLowerCase().includes(search) || lead.email.toLowerCase().includes(search);
     const matchesSource = sourceFilter === "all" || lead.source === sourceFilter;
     const matchesDate =
       dateFilter === "all" ||
-      new Date(lead.created_at) >=
-        new Date(Date.now() - Number(dateFilter) * 24 * 60 * 60 * 1000);
+      new Date(lead.created_at) >= new Date(Date.now() - Number(dateFilter) * 24 * 60 * 60 * 1000);
     return matchesStatus && matchesQuery && matchesSource && matchesDate;
   });
 
@@ -175,9 +197,9 @@ const Leads = () => {
               <tr>
                 <th className="text-left px-6 py-3 font-medium">Name</th>
                 <th className="text-left px-6 py-3 font-medium">Email</th>
-                <th className="text-left px-6 py-3 font-medium">Source</th>
+                <th className="text-left px-6 py-3 font-medium">Company</th>
                 <th className="text-left px-6 py-3 font-medium">Status</th>
-                <th className="text-left px-6 py-3 font-medium">Created</th>
+                <th className="text-left px-6 py-3 font-medium">Date</th>
               </tr>
             </thead>
             <tbody>
@@ -190,9 +212,7 @@ const Leads = () => {
                   >
                     <td className="px-6 py-4 font-medium text-slate-900">{lead.name}</td>
                     <td className="px-6 py-4 text-slate-600">{lead.email}</td>
-                    <td className="px-6 py-4 text-slate-600">
-                      {lead.source || "Unknown"}
-                    </td>
+                    <td className="px-6 py-4 text-slate-600">{extractCompany(lead)}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <StatusBadge status={lead.status} />
@@ -230,84 +250,44 @@ const Leads = () => {
           </table>
         )}
       </div>
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+
+      <Drawer
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
         title="Lead details"
       >
         {selectedLead ? (
-          <div className="space-y-4 text-sm text-slate-600">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <p className="text-xs uppercase text-slate-400">Contact</p>
-                <p className="mt-1 font-medium text-slate-900">{selectedLead.name}</p>
-                <p className="text-sm">{selectedLead.email}</p>
-                {selectedLead.phone ? (
-                  <p className="text-sm text-slate-500">{selectedLead.phone}</p>
-                ) : null}
-              </div>
-              <div>
-                <p className="text-xs uppercase text-slate-400">Status</p>
-                <div className="mt-2">
-                  <StatusBadge status={selectedLead.status} />
-                </div>
-              </div>
-            </div>
-            <div className="grid gap-4 md:grid-cols-3">
-              <div>
-                <p className="text-xs uppercase text-slate-400">Source</p>
-                <p className="mt-1 font-medium text-slate-900">
-                  {selectedLead.source || "Unknown"}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs uppercase text-slate-400">Created</p>
-                <p className="mt-1 font-medium text-slate-900">
-                  {new Date(selectedLead.created_at).toLocaleString()}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs uppercase text-slate-400">Preferred language</p>
-                <p className="mt-1 font-medium text-slate-900">
-                  {selectedLead.preferred_language || "Not specified"}
-                </p>
-              </div>
-            </div>
-            <div>
-              <p className="text-xs uppercase text-slate-400">AI summary</p>
-              <p className="mt-2 rounded-xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-600">
-                {selectedLead.conversation_summary ||
-                  selectedLead.message ||
-                  "No conversation summary available yet."}
+          <div className="space-y-6 text-sm text-slate-600">
+            <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+              <p className="text-xs uppercase text-slate-400">Contact</p>
+              <p className="mt-2 text-lg font-semibold text-slate-900">{selectedLead.name}</p>
+              <p className="text-sm">{selectedLead.email}</p>
+              {selectedLead.phone ? (
+                <p className="text-sm text-slate-500">{selectedLead.phone}</p>
+              ) : null}
+              <p className="mt-3 text-xs text-slate-400">
+                Created {new Date(selectedLead.created_at).toLocaleString()}
               </p>
             </div>
-            {selectedLead.message ? (
-              <div>
-                <p className="text-xs uppercase text-slate-400">Lead message</p>
-                <p className="mt-2 rounded-xl border border-slate-100 bg-white p-4 text-sm text-slate-600">
-                  {selectedLead.message}
-                </p>
-              </div>
-            ) : null}
             <div>
-              <p className="text-xs uppercase text-slate-400">Tags</p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {selectedLead.tags?.length ? (
-                  selectedLead.tags.map((tag) => (
-                    <span
-                      key={`${selectedLead.id}-${tag}`}
-                      className="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-600"
-                    >
-                      {tag}
-                    </span>
-                  ))
-                ) : (
-                  <span className="text-xs text-slate-400">No tags yet.</span>
-                )}
+              <p className="text-xs uppercase text-slate-400">Lead status</p>
+              <div className="mt-2 flex items-center gap-3">
+                <StatusBadge status={selectedLead.status} />
+                <select
+                  className="rounded-lg border border-slate-200 px-3 py-1 text-xs text-slate-600"
+                  value={selectedLead.status}
+                  onChange={(event) => handleStatusChange(selectedLead.id, event.target.value)}
+                >
+                  {statusOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
             <div>
-              <p className="text-xs uppercase text-slate-400">Email history</p>
+              <p className="text-xs uppercase text-slate-400">Conversation history</p>
               <div className="mt-2 space-y-3">
                 {emailLoading ? (
                   <Skeleton className="h-20" />
@@ -318,9 +298,7 @@ const Leads = () => {
                       className="rounded-xl border border-slate-100 bg-white p-3"
                     >
                       <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-slate-900">
-                          {email.subject}
-                        </p>
+                        <p className="text-sm font-medium text-slate-900">{email.subject}</p>
                         <span className="text-xs text-slate-400">
                           {new Date(email.received_at).toLocaleDateString()}
                         </span>
@@ -334,16 +312,15 @@ const Leads = () => {
               </div>
             </div>
             <div>
-              <p className="text-xs uppercase text-slate-400">Notes</p>
-              <textarea
-                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
-                rows={4}
-                placeholder="Add internal notes or next steps..."
-              />
+              <p className="text-xs uppercase text-slate-400">AI suggested reply</p>
+              <div className="mt-2 rounded-xl border border-indigo-100 bg-indigo-50 p-4 text-sm text-slate-600">
+                {aiReplyPreview ||
+                  "No AI reply generated yet. Once an email is connected, suggestions will appear here."}
+              </div>
             </div>
           </div>
         ) : null}
-      </Modal>
+      </Drawer>
     </div>
   );
 };

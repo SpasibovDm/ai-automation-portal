@@ -1,18 +1,41 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  Cell,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 import { BotIcon, LineChartIcon, MailIcon, SparklesIcon } from "../components/Icons";
 import Skeleton from "../components/Skeleton";
 import StatCard from "../components/StatCard";
-import { getAnalyticsOverview } from "../services/api";
+import { getAnalyticsOverview, getEmails } from "../services/api";
+
+const getLast7Days = () => {
+  const days = [];
+  const today = new Date();
+  for (let i = 6; i >= 0; i -= 1) {
+    const date = new Date(today);
+    date.setDate(today.getDate() - i);
+    days.push(date);
+  }
+  return days;
+};
 
 const Analytics = () => {
   const [overview, setOverview] = useState(null);
+  const [emails, setEmails] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [emailLoading, setEmailLoading] = useState(true);
   const [error, setError] = useState("");
-  const leadChartRef = useRef(null);
-  const categoryChartRef = useRef(null);
-  const leadChartInstance = useRef(null);
-  const categoryChartInstance = useRef(null);
 
   useEffect(() => {
     const loadOverview = async () => {
@@ -28,6 +51,45 @@ const Analytics = () => {
     loadOverview();
   }, []);
 
+  useEffect(() => {
+    const loadEmails = async () => {
+      try {
+        const data = await getEmails();
+        setEmails(data);
+      } catch (err) {
+        setEmails([]);
+      } finally {
+        setEmailLoading(false);
+      }
+    };
+    loadEmails();
+  }, []);
+
+  const leadTrend = useMemo(() => {
+    if (!overview?.lead_trend) {
+      return [];
+    }
+    return overview.lead_trend.map((point) => ({
+      day: new Date(point.date).toLocaleDateString(undefined, { weekday: "short" }),
+      leads: point.count,
+    }));
+  }, [overview]);
+
+  const emailVolume = useMemo(() => {
+    const days = getLast7Days();
+    const counts = days.map((date) => {
+      const dayKey = date.toDateString();
+      const count = emails.filter((email) =>
+        new Date(email.received_at).toDateString() === dayKey
+      ).length;
+      return {
+        day: date.toLocaleDateString(undefined, { weekday: "short" }),
+        emails: count,
+      };
+    });
+    return counts;
+  }, [emails]);
+
   const autoReplyRate = useMemo(() => {
     if (!overview?.emails_processed) {
       return 0;
@@ -35,111 +97,13 @@ const Analytics = () => {
     return Math.round((overview.emails_auto_replied / overview.emails_processed) * 100);
   }, [overview]);
 
-  const leadTrend = useMemo(() => {
-    if (!overview?.lead_trend) {
-      return { labels: [], values: [] };
-    }
-    return {
-      labels: overview.lead_trend.map((point) =>
-        new Date(point.date).toLocaleDateString(undefined, { weekday: "short" })
-      ),
-      values: overview.lead_trend.map((point) => point.count),
-    };
-  }, [overview]);
-
-  const emailCategories = useMemo(() => {
-    if (!overview?.email_category_breakdown) {
-      return { labels: [], values: [] };
-    }
-    return {
-      labels: overview.email_category_breakdown.map((item) => item.category),
-      values: overview.email_category_breakdown.map((item) => item.count),
-    };
-  }, [overview]);
-
-  useEffect(() => {
-    const Chart = window.Chart;
-    if (!Chart || !leadChartRef.current) {
-      return undefined;
-    }
-    if (leadChartInstance.current) {
-      leadChartInstance.current.destroy();
-    }
-    leadChartInstance.current = new Chart(leadChartRef.current, {
-      type: "line",
-      data: {
-        labels: leadTrend.labels,
-        datasets: [
-          {
-            label: "Leads",
-            data: leadTrend.values,
-            borderColor: "#2563eb",
-            backgroundColor: "rgba(37, 99, 235, 0.18)",
-            fill: true,
-            tension: 0.35,
-            pointRadius: 3,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          x: {
-            grid: { display: false },
-            ticks: { color: "#94a3b8", font: { size: 12 } },
-          },
-          y: {
-            ticks: { color: "#94a3b8", font: { size: 12 } },
-            grid: { color: "#e2e8f0" },
-          },
-        },
-      },
-    });
-    return () => leadChartInstance.current?.destroy();
-  }, [leadTrend]);
-
-  useEffect(() => {
-    const Chart = window.Chart;
-    if (!Chart || !categoryChartRef.current) {
-      return undefined;
-    }
-    if (categoryChartInstance.current) {
-      categoryChartInstance.current.destroy();
-    }
-    categoryChartInstance.current = new Chart(categoryChartRef.current, {
-      type: "bar",
-      data: {
-        labels: emailCategories.labels,
-        datasets: [
-          {
-            label: "Emails",
-            data: emailCategories.values,
-            backgroundColor: "#60a5fa",
-            borderRadius: 10,
-            barThickness: 24,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          x: {
-            grid: { display: false },
-            ticks: { color: "#94a3b8", font: { size: 12 } },
-          },
-          y: {
-            ticks: { color: "#94a3b8", font: { size: 12 } },
-            grid: { color: "#e2e8f0" },
-          },
-        },
-      },
-    });
-    return () => categoryChartInstance.current?.destroy();
-  }, [emailCategories]);
+  const replyRateData = useMemo(
+    () => [
+      { name: "Auto", value: autoReplyRate },
+      { name: "Manual", value: 100 - autoReplyRate },
+    ],
+    [autoReplyRate]
+  );
 
   return (
     <div className="space-y-6">
@@ -171,13 +135,13 @@ const Analytics = () => {
               value={overview?.leads_generated || 0}
               icon={<LineChartIcon className="h-5 w-5" />}
               helper="Lead volume"
-              trend={`${leadTrend.values.reduce((a, b) => a + b, 0)} in 7 days`}
+              trend={`${leadTrend.reduce((sum, item) => sum + item.leads, 0)} in 7 days`}
             />
             <StatCard
               label="AI accuracy"
               value={`${Math.round((overview?.ai_accuracy || 0) * 100)}%`}
               icon={<SparklesIcon className="h-5 w-5" />}
-              helper="Edited vs sent as-is"
+              helper="Edited vs sent"
               trend={`${Math.round((overview?.edited_rate || 0) * 100)}% edited`}
             />
             <StatCard
@@ -192,7 +156,7 @@ const Analytics = () => {
             <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-md">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-semibold text-slate-900">Leads trend</h3>
+                  <h3 className="text-sm font-semibold text-slate-900">Leads per week</h3>
                   <p className="text-xs text-slate-500">Last 7 days volume</p>
                 </div>
                 <span className="text-xs text-emerald-600">
@@ -200,8 +164,28 @@ const Analytics = () => {
                 </span>
               </div>
               <div className="mt-6 h-56">
-                {leadTrend.values.length ? (
-                  <canvas ref={leadChartRef} />
+                {leadTrend.length ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={leadTrend}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                      <XAxis dataKey="day" tick={{ fill: "#94a3b8", fontSize: 12 }} />
+                      <YAxis tick={{ fill: "#94a3b8", fontSize: 12 }} />
+                      <Tooltip
+                        contentStyle={{
+                          borderRadius: 12,
+                          borderColor: "#e2e8f0",
+                          fontSize: 12,
+                        }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="leads"
+                        stroke="#2563eb"
+                        strokeWidth={3}
+                        dot={{ fill: "#2563eb", r: 3 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
                 ) : (
                   <Skeleton className="h-56" />
                 )}
@@ -210,20 +194,72 @@ const Analytics = () => {
             <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-md">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-semibold text-slate-900">Email categories</h3>
-                  <p className="text-xs text-slate-500">Inbound breakdown</p>
+                  <h3 className="text-sm font-semibold text-slate-900">AI reply rate</h3>
+                  <p className="text-xs text-slate-500">Automation adoption</p>
                 </div>
-                <span className="text-xs text-slate-500">
-                  {overview?.emails_processed || 0} emails
-                </span>
+                <span className="text-xs text-slate-400">{autoReplyRate}%</span>
               </div>
               <div className="mt-6 h-56">
-                {emailCategories.values.length ? (
-                  <canvas ref={categoryChartRef} />
-                ) : (
-                  <Skeleton className="h-56" />
-                )}
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={replyRateData}
+                      dataKey="value"
+                      innerRadius={60}
+                      outerRadius={90}
+                      paddingAngle={4}
+                    >
+                      {replyRateData.map((entry, index) => (
+                        <Cell
+                          key={`slice-${entry.name}`}
+                          fill={index === 0 ? "#4f46e5" : "#e2e8f0"}
+                        />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="mt-4 text-center text-sm text-slate-600">
+                  {autoReplyRate}% of replies sent automatically
+                </div>
               </div>
+            </div>
+          </div>
+          <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-md">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-semibold text-slate-900">Email volume trend</h3>
+                <p className="text-xs text-slate-500">Last 7 days inbound volume</p>
+              </div>
+              <span className="text-xs text-slate-400">
+                {overview?.emails_processed || 0} emails this month
+              </span>
+            </div>
+            <div className="mt-6 h-56">
+              {emailLoading ? (
+                <Skeleton className="h-56" />
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={emailVolume}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis dataKey="day" tick={{ fill: "#94a3b8", fontSize: 12 }} />
+                    <YAxis tick={{ fill: "#94a3b8", fontSize: 12 }} />
+                    <Tooltip
+                      contentStyle={{
+                        borderRadius: 12,
+                        borderColor: "#e2e8f0",
+                        fontSize: 12,
+                      }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="emails"
+                      stroke="#0ea5e9"
+                      fill="rgba(14, 165, 233, 0.2)"
+                      strokeWidth={2}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </div>
         </>
