@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import React, { Fragment, useEffect, useMemo, useState } from "react";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Menu, Transition } from "@headlessui/react";
 import ChatWidget from "./ChatWidget";
 import {
   BellIcon,
@@ -11,6 +12,7 @@ import {
   LogOutIcon,
   MailIcon,
   MenuIcon,
+  SearchIcon,
   SettingsIcon,
   UsersIcon,
 } from "./Icons";
@@ -29,9 +31,9 @@ const navItems = [
 
 const Layout = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { signOut, user } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [companyName, setCompanyName] = useState(
     () => localStorage.getItem("automation-company-name") || "Automation Portal"
   );
@@ -66,6 +68,22 @@ const Layout = () => {
       .toUpperCase();
   }, [user?.email]);
 
+  const pageTitle = useMemo(() => {
+    const path = location.pathname;
+    if (path.startsWith("/leads/")) {
+      return "Lead Details";
+    }
+    const titles = {
+      "/dashboard": "Dashboard",
+      "/leads": "Leads",
+      "/emails": "Emails",
+      "/templates": "Templates",
+      "/analytics": "Analytics",
+      "/settings": "Settings",
+    };
+    return titles[path] || "Dashboard";
+  }, [location.pathname]);
+
   return (
     <ToastProvider>
       <div className="min-h-screen bg-slate-50 text-slate-900 flex app-shell">
@@ -98,7 +116,10 @@ const Layout = () => {
                   <button
                     key={`${item.label}-${item.path}`}
                     type="button"
-                    onClick={handleLogout}
+                    onClick={() => {
+                      setIsSidebarOpen(false);
+                      handleLogout();
+                    }}
                     className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                   >
                     <Icon className="h-4 w-4" />
@@ -110,6 +131,7 @@ const Layout = () => {
                 <NavLink
                   key={`${item.label}-${item.path}`}
                   to={item.path}
+                  onClick={() => setIsSidebarOpen(false)}
                   className={({ isActive }) =>
                     `flex items-center gap-3 rounded-xl px-4 py-2.5 transition ${
                       isActive
@@ -140,10 +162,19 @@ const Layout = () => {
                 <p className="text-xs uppercase tracking-[0.3em] text-slate-400">
                   AI Automation Portal
                 </p>
-                <h1 className="text-lg font-semibold text-slate-900">{companyName}</h1>
+                <h1 className="text-lg font-semibold text-slate-900">{pageTitle}</h1>
+                <p className="text-xs text-slate-500">{companyName}</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
+              <div className="relative hidden md:flex items-center">
+                <SearchIcon className="absolute left-3 h-4 w-4 text-slate-400" />
+                <input
+                  type="search"
+                  placeholder="Search leads, emails, templates"
+                  className="w-64 rounded-full border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm text-slate-600 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+                />
+              </div>
               <button
                 type="button"
                 className="relative rounded-full border border-slate-200 bg-white p-2 text-slate-600 hover:bg-slate-100"
@@ -152,42 +183,64 @@ const Layout = () => {
                 <BellIcon className="h-5 w-5" />
                 <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-indigo-500" />
               </button>
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setIsUserMenuOpen((prev) => !prev)}
-                  className="flex items-center gap-3 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100"
-                >
+              <Menu as="div" className="relative">
+                <Menu.Button className="flex items-center gap-3 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100">
                   <span className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 text-xs font-semibold text-white">
                     {initials}
                   </span>
                   <span className="hidden sm:inline">{user?.email || "Workspace User"}</span>
                   <ChevronDownIcon className="h-4 w-4" />
-                </button>
-                {isUserMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-48 rounded-xl border border-slate-200 bg-white p-2 text-sm text-slate-600 shadow-lg">
-                    <button
-                      type="button"
-                      className="w-full rounded-lg px-3 py-2 text-left hover:bg-slate-100"
-                    >
-                      View profile
-                    </button>
-                    <button
-                      type="button"
-                      className="w-full rounded-lg px-3 py-2 text-left hover:bg-slate-100"
-                    >
-                      Workspace settings
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleLogout}
-                      className="w-full rounded-lg px-3 py-2 text-left text-rose-600 hover:bg-rose-50"
-                    >
-                      Sign out
-                    </button>
-                  </div>
-                )}
-              </div>
+                </Menu.Button>
+                <Transition
+                  as={Fragment}
+                  enter="transition ease-out duration-200"
+                  enterFrom="opacity-0 translate-y-2"
+                  enterTo="opacity-100 translate-y-0"
+                  leave="transition ease-in duration-150"
+                  leaveFrom="opacity-100 translate-y-0"
+                  leaveTo="opacity-0 translate-y-2"
+                >
+                  <Menu.Items className="absolute right-0 mt-2 w-48 rounded-xl border border-slate-200 bg-white p-2 text-sm text-slate-600 shadow-lg focus:outline-none">
+                    <Menu.Item>
+                      {({ active }) => (
+                        <button
+                          type="button"
+                          className={`w-full rounded-lg px-3 py-2 text-left ${
+                            active ? "bg-slate-100" : ""
+                          }`}
+                        >
+                          View profile
+                        </button>
+                      )}
+                    </Menu.Item>
+                    <Menu.Item>
+                      {({ active }) => (
+                        <button
+                          type="button"
+                          className={`w-full rounded-lg px-3 py-2 text-left ${
+                            active ? "bg-slate-100" : ""
+                          }`}
+                        >
+                          Workspace settings
+                        </button>
+                      )}
+                    </Menu.Item>
+                    <Menu.Item>
+                      {({ active }) => (
+                        <button
+                          type="button"
+                          onClick={handleLogout}
+                          className={`w-full rounded-lg px-3 py-2 text-left text-rose-600 ${
+                            active ? "bg-rose-50" : ""
+                          }`}
+                        >
+                          Sign out
+                        </button>
+                      )}
+                    </Menu.Item>
+                  </Menu.Items>
+                </Transition>
+              </Menu>
             </div>
           </header>
           <main className="flex-1 px-4 py-6 md:px-8 lg:px-10">

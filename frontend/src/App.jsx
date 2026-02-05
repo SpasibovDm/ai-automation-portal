@@ -6,6 +6,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Analytics from "./pages/Analytics";
 import Dashboard from "./pages/Dashboard";
 import Emails from "./pages/Emails";
+import LeadDetails from "./pages/LeadDetails";
 import Leads from "./pages/Leads";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -29,6 +30,7 @@ const App = () => {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="analytics" element={<Analytics />} />
         <Route path="leads" element={<Leads />} />
+        <Route path="leads/:leadId" element={<LeadDetails />} />
         <Route path="emails" element={<Emails />} />
         <Route path="templates" element={<Templates />} />
         <Route path="settings" element={<Settings />} />

@@ -98,7 +98,7 @@ const Templates = () => {
             Manage AI reply templates for common scenarios.
           </p>
         </div>
-        <Button onClick={openCreate}>New template</Button>
+        <Button onClick={openCreate}>Create template</Button>
       </div>
 
       <Card>

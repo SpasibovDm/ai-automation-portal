@@ -1,12 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
-
-import Drawer from "../components/Drawer";
+import { useNavigate } from "react-router-dom";
 import EmptyState from "../components/EmptyState";
 import { SearchIcon, UsersIcon } from "../components/Icons";
 import Skeleton from "../components/Skeleton";
 import StatusBadge from "../components/StatusBadge";
 import { useToast } from "../components/ToastContext";
-import { getEmailAnalysis, getLeadEmails, getLeads, updateLeadStatus } from "../services/api";
+import { getLeads, updateLeadStatus } from "../services/api";
 
 const statusOptions = ["new", "contacted", "qualified", "closed"];
 const dateOptions = [
@@ -17,6 +16,7 @@ const dateOptions = [
 ];
 
 const Leads = () => {
+  const navigate = useNavigate();
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -24,11 +24,6 @@ const Leads = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
-  const [selectedLead, setSelectedLead] = useState(null);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [leadEmails, setLeadEmails] = useState([]);
-  const [emailLoading, setEmailLoading] = useState(false);
-  const [aiReplyPreview, setAiReplyPreview] = useState("");
   const { addToast } = useToast();
 
   const emptyState = useMemo(
@@ -58,9 +53,6 @@ const Leads = () => {
     try {
       const updated = await updateLeadStatus(leadId, status);
       setLeads((prev) => prev.map((lead) => (lead.id === updated.id ? updated : lead)));
-      if (selectedLead?.id === leadId) {
-        setSelectedLead(updated);
-      }
       addToast({
         title: "Lead updated",
         description: `Status set to ${status}.`,
@@ -74,24 +66,8 @@ const Leads = () => {
     }
   };
 
-  const handleViewLead = async (lead) => {
-    setSelectedLead(lead);
-    setIsDrawerOpen(true);
-    setEmailLoading(true);
-    setAiReplyPreview("");
-    try {
-      const emails = await getLeadEmails(lead.id);
-      setLeadEmails(emails);
-      if (emails.length) {
-        const analysis = await getEmailAnalysis(emails[0].id);
-        setAiReplyPreview(analysis.ai_reply_suggestion || "");
-      }
-    } catch (err) {
-      setLeadEmails([]);
-      setAiReplyPreview("");
-    } finally {
-      setEmailLoading(false);
-    }
+  const handleViewLead = (lead) => {
+    navigate(`/leads/${lead.id}`);
   };
 
   const sourceOptions = useMemo(() => {
@@ -250,77 +226,6 @@ const Leads = () => {
           </table>
         )}
       </div>
-
-      <Drawer
-        isOpen={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
-        title="Lead details"
-      >
-        {selectedLead ? (
-          <div className="space-y-6 text-sm text-slate-600">
-            <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
-              <p className="text-xs uppercase text-slate-400">Contact</p>
-              <p className="mt-2 text-lg font-semibold text-slate-900">{selectedLead.name}</p>
-              <p className="text-sm">{selectedLead.email}</p>
-              {selectedLead.phone ? (
-                <p className="text-sm text-slate-500">{selectedLead.phone}</p>
-              ) : null}
-              <p className="mt-3 text-xs text-slate-400">
-                Created {new Date(selectedLead.created_at).toLocaleString()}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs uppercase text-slate-400">Lead status</p>
-              <div className="mt-2 flex items-center gap-3">
-                <StatusBadge status={selectedLead.status} />
-                <select
-                  className="rounded-lg border border-slate-200 px-3 py-1 text-xs text-slate-600"
-                  value={selectedLead.status}
-                  onChange={(event) => handleStatusChange(selectedLead.id, event.target.value)}
-                >
-                  {statusOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div>
-              <p className="text-xs uppercase text-slate-400">Conversation history</p>
-              <div className="mt-2 space-y-3">
-                {emailLoading ? (
-                  <Skeleton className="h-20" />
-                ) : leadEmails.length ? (
-                  leadEmails.map((email) => (
-                    <div
-                      key={email.id}
-                      className="rounded-xl border border-slate-100 bg-white p-3"
-                    >
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-slate-900">{email.subject}</p>
-                        <span className="text-xs text-slate-400">
-                          {new Date(email.received_at).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <p className="mt-2 text-xs text-slate-500">{email.preview}</p>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-slate-400">No related emails yet.</p>
-                )}
-              </div>
-            </div>
-            <div>
-              <p className="text-xs uppercase text-slate-400">AI suggested reply</p>
-              <div className="mt-2 rounded-xl border border-indigo-100 bg-indigo-50 p-4 text-sm text-slate-600">
-                {aiReplyPreview ||
-                  "No AI reply generated yet. Once an email is connected, suggestions will appear here."}
-              </div>
-            </div>
-          </div>
-        ) : null}
-      </Drawer>
     </div>
   );
 };

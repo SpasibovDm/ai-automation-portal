@@ -79,6 +79,11 @@ export const getLeads = async () => {
   return response.data;
 };
 
+export const getLead = async (leadId) => {
+  const response = await api.get(`/leads/${leadId}`);
+  return response.data;
+};
+
 export const updateLeadStatus = async (leadId, status) => {
   const response = await api.patch(`/leads/${leadId}/status`, { status });
   return response.data;

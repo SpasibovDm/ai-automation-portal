@@ -1,21 +1,25 @@
 import React, { useEffect, useMemo, useState } from "react";
 
 import Badge from "../components/Badge";
+import Button from "../components/Button";
 import EmptyState from "../components/EmptyState";
-import Modal from "../components/Modal";
 import Skeleton from "../components/Skeleton";
 import StatusBadge from "../components/StatusBadge";
 import { MailIcon } from "../components/Icons";
-import { getEmailAnalysis, getEmailThread, getEmails } from "../services/api";
+import { useToast } from "../components/ToastContext";
+import { getEmailAnalysis, getEmailThread, getEmails, regenerateEmailReply } from "../services/api";
 
 const Emails = () => {
+  const { addToast } = useToast();
   const [emails, setEmails] = useState([]);
+  const [selectedEmailId, setSelectedEmailId] = useState(null);
   const [selectedEmail, setSelectedEmail] = useState(null);
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
   const [error, setError] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [generatedReply, setGeneratedReply] = useState("");
+  const [regenerating, setRegenerating] = useState(false);
 
   const emptyState = useMemo(
     () => ({
@@ -30,6 +34,7 @@ const Emails = () => {
       try {
         const data = await getEmails();
         setEmails(data);
+        setSelectedEmailId(data[0]?.id || null);
       } catch (err) {
         setError("Unable to load emails.");
       } finally {
@@ -39,35 +44,40 @@ const Emails = () => {
     loadEmails();
   }, []);
 
-  const getCompanyLabel = (email) => {
-    if (!email?.from_email) {
-      return "Unknown";
-    }
-    const domain = email.from_email.split("@")[1];
-    if (!domain) {
-      return "Unknown";
-    }
-    return domain.split(".")[0].replace(/[-_]/g, " ");
-  };
-
-  const handleOpenEmail = async (emailId) => {
-    setIsModalOpen(true);
-    setDetailLoading(true);
-    setSelectedEmail(null);
-    try {
-      const thread = await getEmailThread(emailId);
-      setSelectedEmail(thread.email);
-      const analysisData = await getEmailAnalysis(emailId);
-      setAnalysis(analysisData);
-    } catch (err) {
+  useEffect(() => {
+    if (!selectedEmailId) {
       setSelectedEmail(null);
       setAnalysis(null);
-    } finally {
+      setGeneratedReply("");
       setDetailLoading(false);
+      return;
     }
-  };
+    const loadDetails = async () => {
+      setDetailLoading(true);
+      setGeneratedReply("");
+      setSelectedEmail(null);
+      setAnalysis(null);
+      try {
+        const [thread, analysisData] = await Promise.all([
+          getEmailThread(selectedEmailId),
+          getEmailAnalysis(selectedEmailId),
+        ]);
+        setSelectedEmail(thread.email);
+        setAnalysis(analysisData);
+      } catch (err) {
+        setSelectedEmail(null);
+        setAnalysis(null);
+      } finally {
+        setDetailLoading(false);
+      }
+    };
+    loadDetails();
+  }, [selectedEmailId]);
 
   const aiReplyPreview = useMemo(() => {
+    if (generatedReply) {
+      return generatedReply;
+    }
     if (analysis?.ai_reply_suggestion) {
       return analysis.ai_reply_suggestion;
     }
@@ -75,7 +85,41 @@ const Emails = () => {
       return selectedEmail.replies[0].body;
     }
     return "No AI reply has been generated yet.";
-  }, [analysis, selectedEmail]);
+  }, [analysis, generatedReply, selectedEmail]);
+
+  const priorityVariant = useMemo(() => {
+    const key = analysis?.priority?.toLowerCase();
+    if (key === "high") {
+      return "danger";
+    }
+    if (key === "low") {
+      return "success";
+    }
+    return "warning";
+  }, [analysis?.priority]);
+
+  const handleRegenerate = async () => {
+    if (!selectedEmailId) {
+      return;
+    }
+    setRegenerating(true);
+    try {
+      const response = await regenerateEmailReply(selectedEmailId);
+      setGeneratedReply(response.reply?.body || "");
+      addToast({
+        title: "AI reply refreshed",
+        description: "A new reply draft is ready for review.",
+      });
+    } catch (err) {
+      addToast({
+        title: "Generation failed",
+        description: "We could not regenerate the AI reply.",
+        variant: "error",
+      });
+    } finally {
+      setRegenerating(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -83,102 +127,129 @@ const Emails = () => {
         <h2 className="text-2xl font-semibold text-slate-900">Emails</h2>
         <p className="text-sm text-slate-500">Review inbound messages and AI responses.</p>
       </div>
-      <div className="rounded-2xl border border-slate-100 bg-white shadow-md overflow-hidden">
-        {loading ? (
-          <div className="space-y-3 p-6">
-            {Array.from({ length: 5 }).map((_, index) => (
-              <Skeleton key={`email-skeleton-${index}`} className="h-12" />
-            ))}
-          </div>
-        ) : error ? (
-          <div className="p-6 text-sm text-red-600">{error}</div>
-        ) : emails.length ? (
-          <table className="min-w-full text-sm">
-            <thead className="bg-slate-50 text-slate-500">
-              <tr>
-                <th className="text-left px-6 py-3 font-medium">From</th>
-                <th className="text-left px-6 py-3 font-medium">Subject</th>
-                <th className="text-left px-6 py-3 font-medium">Company</th>
-                <th className="text-left px-6 py-3 font-medium">Date</th>
-                <th className="text-left px-6 py-3 font-medium">AI Replied?</th>
-              </tr>
-            </thead>
-            <tbody>
+
+      {loading ? (
+        <div className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">
+          <Skeleton className="h-96" />
+          <Skeleton className="h-96" />
+        </div>
+      ) : error ? (
+        <div className="text-sm text-red-600">{error}</div>
+      ) : emails.length ? (
+        <div className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">
+          <div className="rounded-2xl border border-slate-100 bg-white shadow-md overflow-hidden">
+            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+              <div>
+                <p className="text-xs uppercase text-slate-400">Inbox</p>
+                <p className="text-sm text-slate-600">{emails.length} messages</p>
+              </div>
+              <MailIcon className="h-5 w-5 text-slate-400" />
+            </div>
+            <div className="max-h-[70vh] overflow-y-auto">
               {emails.map((email) => {
                 const aiReplied = email.replies?.some((reply) => reply.generated_by_ai);
+                const isActive = selectedEmailId === email.id;
                 return (
-                  <tr
+                  <button
                     key={email.id}
-                    className="border-t border-slate-100 transition hover:bg-slate-50 cursor-pointer"
-                    onClick={() => handleOpenEmail(email.id)}
+                    type="button"
+                    onClick={() => setSelectedEmailId(email.id)}
+                    className={`w-full border-b border-slate-100 px-5 py-4 text-left transition ${
+                      isActive ? "bg-indigo-50" : "hover:bg-slate-50"
+                    }`}
                   >
-                    <td className="px-6 py-4 font-medium text-slate-900">{email.from_email}</td>
-                    <td className="px-6 py-4 text-slate-600">{email.subject}</td>
-                    <td className="px-6 py-4 text-slate-600">{getCompanyLabel(email)}</td>
-                    <td className="px-6 py-4 text-slate-500">
-                      {new Date(email.received_at).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4">
-                      {aiReplied ? (
-                        <StatusBadge status="sent" label="Yes" />
-                      ) : (
-                        <StatusBadge status="pending" label="No" />
-                      )}
-                    </td>
-                  </tr>
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">{email.subject}</p>
+                        <p className="text-xs text-slate-500">{email.from_email}</p>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <StatusBadge status={email.status} />
+                        <Badge variant={aiReplied ? "success" : "warning"}>
+                          {aiReplied ? "AI replied" : "Awaiting"}
+                        </Badge>
+                      </div>
+                    </div>
+                    <p className="mt-3 text-xs text-slate-500">{email.preview}</p>
+                  </button>
                 );
               })}
-            </tbody>
-          </table>
-        ) : (
-          <div className="p-6">
-            <EmptyState
-              title={emptyState.title}
-              description={emptyState.description}
-              icon={<MailIcon className="h-6 w-6" />}
-            />
+            </div>
           </div>
-        )}
-      </div>
 
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="Email detail"
-      >
-        {detailLoading ? (
-          <div className="space-y-3">
-            <Skeleton className="h-5" />
-            <Skeleton className="h-24" />
-            <Skeleton className="h-16" />
-          </div>
-        ) : selectedEmail ? (
-          <div className="space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <h3 className="text-lg font-semibold text-slate-900">{selectedEmail.subject}</h3>
-                <p className="text-sm text-slate-500">From {selectedEmail.from_email}</p>
+          <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-md">
+            {detailLoading ? (
+              <div className="space-y-4">
+                <Skeleton className="h-6" />
+                <Skeleton className="h-24" />
+                <Skeleton className="h-16" />
               </div>
-              <Badge variant="info">{analysis?.category || "General"}</Badge>
-            </div>
-            <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-700">
-              {selectedEmail.body}
-            </div>
-            <div>
-              <p className="text-xs uppercase text-slate-400">AI response preview</p>
-              <div className="mt-2 rounded-xl border border-indigo-100 bg-indigo-50 p-4 text-sm text-slate-600">
-                {aiReplyPreview}
+            ) : selectedEmail ? (
+              <div className="space-y-6">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900">
+                      {selectedEmail.subject}
+                    </h3>
+                    <p className="text-sm text-slate-500">From {selectedEmail.from_email}</p>
+                    <p className="text-xs text-slate-400">
+                      {new Date(selectedEmail.received_at).toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <StatusBadge status={selectedEmail.status} />
+                    <Badge variant="info">{analysis?.category || "General"}</Badge>
+                    {analysis?.priority ? (
+                      <Badge variant={priorityVariant}>{analysis.priority} priority</Badge>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-700">
+                  {selectedEmail.body}
+                </div>
+
+                {analysis?.summary ? (
+                  <div className="text-sm text-slate-600">
+                    <p className="text-xs uppercase text-slate-400">Summary</p>
+                    <p className="mt-2">{analysis.summary}</p>
+                  </div>
+                ) : null}
+
+                <div>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs uppercase text-slate-400">AI response preview</p>
+                    <Button
+                      variant="subtle"
+                      onClick={handleRegenerate}
+                      disabled={regenerating}
+                    >
+                      {regenerating ? "Regenerating..." : "Regenerate AI reply"}
+                    </Button>
+                  </div>
+                  <div className="mt-2 rounded-xl border border-indigo-100 bg-indigo-50 p-4 text-sm text-slate-600">
+                    {aiReplyPreview}
+                  </div>
+                </div>
               </div>
-            </div>
+            ) : (
+              <EmptyState
+                title="Select an email"
+                description="Choose a message from the inbox to review details."
+                icon={<MailIcon className="h-6 w-6" />}
+              />
+            )}
           </div>
-        ) : (
+        </div>
+      ) : (
+        <div className="p-6">
           <EmptyState
-            title="Select an email"
-            description="Choose an email from the table to view details."
+            title={emptyState.title}
+            description={emptyState.description}
             icon={<MailIcon className="h-6 w-6" />}
           />
-        )}
-      </Modal>
+        </div>
+      )}
     </div>
   );
 };
