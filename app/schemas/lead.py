@@ -3,6 +3,8 @@ from typing import Optional
 
 from pydantic import BaseModel, EmailStr, field_validator
 
+from app.schemas.enums import LeadStatus
+
 
 class LeadBase(BaseModel):
     name: str
@@ -27,19 +29,19 @@ class LeadCreate(LeadBase):
 
 
 class LeadUpdate(BaseModel):
-    status: Optional[str] = None
+    status: Optional[LeadStatus] = None
     message: Optional[str] = None
     phone: Optional[str] = None
     tags: Optional[list[str]] = None
 
 
 class LeadStatusUpdate(BaseModel):
-    status: str
+    status: LeadStatus
 
 
 class LeadRead(LeadBase):
     id: int
-    status: str
+    status: LeadStatus
     created_at: datetime
     company_id: Optional[int] = None
 

@@ -36,12 +36,16 @@ export const ToastProvider = ({ children }) => {
             key={toast.id}
             className={`rounded-2xl border px-4 py-3 text-sm shadow-lg animate-slide-up ${
               toast.variant === "error"
-                ? "border-rose-200 bg-rose-50 text-rose-700"
-                : "border-emerald-100 bg-emerald-50 text-emerald-700"
+                ? "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/40 dark:bg-rose-500/10 dark:text-rose-200"
+                : "border-emerald-100 bg-emerald-50 text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-200"
             }`}
           >
             <p className="font-semibold">{toast.title}</p>
-            {toast.description && <p className="text-xs text-slate-600">{toast.description}</p>}
+            {toast.description && (
+              <p className="text-xs text-slate-600 dark:text-slate-300">
+                {toast.description}
+              </p>
+            )}
           </div>
         ))}
       </div>

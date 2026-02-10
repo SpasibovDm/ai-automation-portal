@@ -177,12 +177,14 @@ const LeadDetails = () => {
         <div>
           <Link
             to="/leads"
-            className="text-xs uppercase tracking-[0.3em] text-slate-400"
+            className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-slate-500"
           >
             Back to leads
           </Link>
-          <h2 className="text-2xl font-semibold text-slate-900">Lead details</h2>
-          <p className="text-sm text-slate-500">
+          <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">
+            Lead details
+          </h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             Full context for every inbound conversation.
           </p>
         </div>
@@ -201,38 +203,52 @@ const LeadDetails = () => {
           icon={<UserPlusIcon className="h-6 w-6" />}
         />
       ) : lead ? (
-        <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-          <div className="space-y-6">
-            <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-md">
+          <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+            <div className="space-y-6">
+            <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-md dark:border-slate-800 dark:bg-slate-900/80">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-xs uppercase text-slate-400">Contact info</p>
-                  <h3 className="mt-2 text-lg font-semibold text-slate-900">{lead.name}</h3>
-                  <p className="text-sm text-slate-600">{lead.email}</p>
+                  <p className="text-xs uppercase text-slate-400 dark:text-slate-500">
+                    Contact info
+                  </p>
+                  <h3 className="mt-2 text-lg font-semibold text-slate-900 dark:text-white">
+                    {lead.name}
+                  </h3>
+                  <p className="text-sm text-slate-600 dark:text-slate-300">{lead.email}</p>
                   {lead.phone ? (
-                    <p className="text-sm text-slate-500">{lead.phone}</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      {lead.phone}
+                    </p>
                   ) : null}
                 </div>
                 <Badge variant="info">{extractCompany(lead)}</Badge>
               </div>
-              <div className="mt-4 grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
+              <div className="mt-4 grid gap-3 text-sm text-slate-600 dark:text-slate-300 sm:grid-cols-2">
                 <div>
-                  <p className="text-xs uppercase text-slate-400">Source</p>
+                  <p className="text-xs uppercase text-slate-400 dark:text-slate-500">
+                    Source
+                  </p>
                   <p className="mt-1">{lead.source || "Website"}</p>
                 </div>
                 <div>
-                  <p className="text-xs uppercase text-slate-400">Created</p>
+                  <p className="text-xs uppercase text-slate-400 dark:text-slate-500">
+                    Created
+                  </p>
                   <p className="mt-1">{new Date(lead.created_at).toLocaleString()}</p>
                 </div>
                 {lead.preferred_language ? (
                   <div>
-                    <p className="text-xs uppercase text-slate-400">Language</p>
+                    <p className="text-xs uppercase text-slate-400 dark:text-slate-500">
+                      Language
+                    </p>
                     <p className="mt-1">{lead.preferred_language}</p>
                   </div>
                 ) : null}
                 {Array.isArray(lead.tags) && lead.tags.length ? (
                   <div>
-                    <p className="text-xs uppercase text-slate-400">Tags</p>
+                    <p className="text-xs uppercase text-slate-400 dark:text-slate-500">
+                      Tags
+                    </p>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {lead.tags.map((tag) => (
                         <Badge key={tag} variant="default">
@@ -244,17 +260,19 @@ const LeadDetails = () => {
                 ) : null}
               </div>
               {lead.message ? (
-                <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-600">
+                <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-950/70 dark:text-slate-300">
                   {lead.message}
                 </div>
               ) : null}
             </div>
 
-            <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-md">
+            <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-md dark:border-slate-800 dark:bg-slate-900/80">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs uppercase text-slate-400">Lead status</p>
-                  <p className="mt-1 text-sm text-slate-600">
+                  <p className="text-xs uppercase text-slate-400 dark:text-slate-500">
+                    Lead status
+                  </p>
+                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
                     Update the pipeline stage for this lead.
                   </p>
                 </div>
@@ -262,7 +280,7 @@ const LeadDetails = () => {
               </div>
               <div className="mt-4 flex flex-wrap items-center gap-3">
                 <select
-                  className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-600"
+                  className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                   value={statusValue}
                   onChange={(event) => setStatusValue(event.target.value)}
                 >
@@ -278,15 +296,17 @@ const LeadDetails = () => {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-md">
+            <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-md dark:border-slate-800 dark:bg-slate-900/80">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs uppercase text-slate-400">Lead emails</p>
-                  <p className="mt-1 text-sm text-slate-600">
+                  <p className="text-xs uppercase text-slate-400 dark:text-slate-500">
+                    Lead emails
+                  </p>
+                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
                     Review recent inbound messages.
                   </p>
                 </div>
-                <MailIcon className="h-5 w-5 text-slate-400" />
+                <MailIcon className="h-5 w-5 text-slate-400 dark:text-slate-500" />
               </div>
               <div className="mt-4 space-y-3">
                 {emailLoading ? (
@@ -299,17 +319,21 @@ const LeadDetails = () => {
                       onClick={() => setSelectedEmailId(email.id)}
                       className={`w-full rounded-xl border px-4 py-3 text-left transition ${
                         selectedEmailId === email.id
-                          ? "border-indigo-200 bg-indigo-50"
-                          : "border-slate-100 bg-white hover:bg-slate-50"
+                          ? "border-indigo-200 bg-indigo-50 dark:border-indigo-500/40 dark:bg-indigo-500/10"
+                          : "border-slate-100 bg-white hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:bg-slate-800/60"
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-slate-900">{email.subject}</p>
-                        <span className="text-xs text-slate-400">
+                        <p className="text-sm font-medium text-slate-900 dark:text-white">
+                          {email.subject}
+                        </p>
+                        <span className="text-xs text-slate-400 dark:text-slate-500">
                           {new Date(email.received_at).toLocaleDateString()}
                         </span>
                       </div>
-                      <p className="mt-2 text-xs text-slate-500">{email.preview}</p>
+                      <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                        {email.preview}
+                      </p>
                     </button>
                   ))
                 ) : (
@@ -324,11 +348,13 @@ const LeadDetails = () => {
           </div>
 
           <div className="space-y-6">
-            <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-md">
+            <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-md dark:border-slate-800 dark:bg-slate-900/80">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs uppercase text-slate-400">Selected email</p>
-                  <p className="mt-1 text-sm text-slate-600">
+                  <p className="text-xs uppercase text-slate-400 dark:text-slate-500">
+                    Selected email
+                  </p>
+                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
                     {selectedEmail ? selectedEmail.subject : "Choose an email"}
                   </p>
                 </div>
@@ -336,9 +362,9 @@ const LeadDetails = () => {
                   {analysisLoading ? "Analyzing..." : analysis?.category || "General"}
                 </Badge>
               </div>
-              <div className="mt-4 text-sm text-slate-600">
+              <div className="mt-4 text-sm text-slate-600 dark:text-slate-300">
                 {selectedEmail ? (
-                  <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+                  <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/70">
                     {selectedEmail.preview}
                   </div>
                 ) : (
@@ -346,15 +372,19 @@ const LeadDetails = () => {
                 )}
               </div>
               {analysis?.summary ? (
-                <div className="mt-4 text-xs text-slate-500">Summary: {analysis.summary}</div>
+                <div className="mt-4 text-xs text-slate-500 dark:text-slate-400">
+                  Summary: {analysis.summary}
+                </div>
               ) : null}
             </div>
 
-            <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-md">
+            <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-md dark:border-slate-800 dark:bg-slate-900/80">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs uppercase text-slate-400">AI reply preview</p>
-                  <p className="mt-1 text-sm text-slate-600">
+                  <p className="text-xs uppercase text-slate-400 dark:text-slate-500">
+                    AI reply preview
+                  </p>
+                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
                     Draft response for the selected email.
                   </p>
                 </div>
@@ -366,7 +396,7 @@ const LeadDetails = () => {
                   {regenerating ? "Regenerating..." : "Regenerate AI reply"}
                 </Button>
               </div>
-              <div className="mt-4 rounded-xl border border-indigo-100 bg-indigo-50 p-4 text-sm text-slate-600">
+              <div className="mt-4 rounded-xl border border-indigo-100 bg-indigo-50 p-4 text-sm text-slate-600 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-100">
                 {analysisLoading ? <Skeleton className="h-20" /> : aiReplyPreview}
               </div>
             </div>

@@ -2,10 +2,13 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
+import { MoonIcon, SunIcon } from "../components/Icons";
 
 const Login = () => {
   const navigate = useNavigate();
   const { signIn } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [formState, setFormState] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -29,20 +32,34 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
-      <div className="w-full max-w-md rounded-3xl border border-slate-100 bg-white p-8 shadow-xl">
+    <div className="min-h-screen flex items-center justify-center px-4 app-shell">
+      <button
+        type="button"
+        onClick={toggleTheme}
+        className="absolute right-6 top-6 rounded-full border border-slate-200 bg-white p-2 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+        aria-label="Toggle theme"
+      >
+        {theme === "dark" ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
+      </button>
+      <div className="w-full max-w-md rounded-3xl border border-slate-100 bg-white p-8 shadow-xl dark:border-slate-800 dark:bg-slate-900/90">
         <div className="mb-6">
-          <p className="text-xs uppercase tracking-[0.3em] text-slate-400">AI Automation Portal</p>
-          <h1 className="mt-3 text-2xl font-semibold text-slate-900">Welcome back</h1>
-          <p className="text-sm text-slate-500 mt-2">
+          <p className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-slate-500">
+            AI Automation Portal
+          </p>
+          <h1 className="mt-3 text-2xl font-semibold text-slate-900 dark:text-white">
+            Welcome back
+          </h1>
+          <p className="text-sm text-slate-500 mt-2 dark:text-slate-400">
             Sign in to manage leads, inbox automation, and AI replies.
           </p>
         </div>
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
-            <label className="text-sm font-medium text-slate-700">Email</label>
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
+              Email
+            </label>
             <input
-              className="mt-2 w-full rounded-lg border border-slate-200 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-slate-900"
+              className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-4 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:focus:ring-indigo-500/50"
               type="email"
               name="email"
               value={formState.email}
@@ -51,9 +68,11 @@ const Login = () => {
             />
           </div>
           <div>
-            <label className="text-sm font-medium text-slate-700">Password</label>
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
+              Password
+            </label>
             <input
-              className="mt-2 w-full rounded-lg border border-slate-200 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-slate-900"
+              className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-4 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:focus:ring-indigo-500/50"
               type="password"
               name="password"
               value={formState.password}
@@ -69,9 +88,9 @@ const Login = () => {
           >
             {loading ? "Signing in..." : "Sign in"}
           </button>
-          <p className="text-sm text-slate-500 text-center">
+          <p className="text-sm text-slate-500 text-center dark:text-slate-400">
             New here?{" "}
-            <Link className="text-slate-900 font-medium" to="/register">
+            <Link className="text-slate-900 font-medium dark:text-white" to="/register">
               Create an account
             </Link>
           </p>

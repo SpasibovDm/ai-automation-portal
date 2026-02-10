@@ -1,0 +1,19 @@
+<svg width="1200" height="675" viewBox="0 0 1200 675" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="675" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F1F5F9"/>
+      <stop offset="1" stop-color="#E0E7FF"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="675" rx="28" fill="url(#bg)"/>
+  <rect x="80" y="90" width="1040" height="80" rx="20" fill="white" opacity="0.9"/>
+  <rect x="80" y="200" width="420" height="400" rx="24" fill="white" stroke="#E2E8F0"/>
+  <rect x="520" y="200" width="600" height="400" rx="24" fill="white" stroke="#E2E8F0"/>
+  <rect x="110" y="240" width="360" height="60" rx="16" fill="#EEF2FF"/>
+  <rect x="110" y="320" width="360" height="60" rx="16" fill="#F8FAFC"/>
+  <rect x="110" y="400" width="360" height="60" rx="16" fill="#F8FAFC"/>
+  <text x="120" y="140" font-family="Space Grotesk, Arial" font-size="28" fill="#0F172A">Inbox</text>
+  <text x="560" y="260" font-family="Space Grotesk, Arial" font-size="18" fill="#64748B">Original email</text>
+  <text x="560" y="360" font-family="Space Grotesk, Arial" font-size="18" fill="#64748B">AI draft response</text>
+  <path d="M560 390 H1040" stroke="#E2E8F0" stroke-width="3"/>
+</svg>

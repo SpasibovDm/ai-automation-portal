@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 from app.core.deps import get_company_from_api_key, get_db
@@ -10,6 +12,7 @@ from app.services.lead_service import create_lead
 from app.tasks import generate_email_reply_task
 
 router = APIRouter(tags=["public"])
+logger = logging.getLogger("app.public")
 
 
 @router.post("/public/lead", response_model=LeadCreateResponse, status_code=status.HTTP_201_CREATED)
@@ -26,6 +29,15 @@ def create_public_lead(
         entity_id=lead.id,
         company_id=company.id,
         description="Lead captured via public endpoint",
+    )
+    logger.info(
+        "lead.captured",
+        extra={
+            "lead_id": lead.id,
+            "company_id": company.id,
+            "source": lead.source,
+            "email": lead.email,
+        },
     )
     template = get_template(db, "lead", lead.company_id)
     auto_reply = None
@@ -48,6 +60,15 @@ def receive_incoming_email(
         entity_id=email.id,
         company_id=company.id,
         description="Email received via webhook",
+    )
+    logger.info(
+        "email.received",
+        extra={
+            "email_id": email.id,
+            "company_id": company.id,
+            "from_email": email.from_email,
+            "subject": email.subject,
+        },
     )
 
     generate_email_reply_task.delay(email.id, company.id)

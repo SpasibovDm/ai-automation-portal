@@ -9,30 +9,45 @@ import {
   FileTextIcon,
   LayoutDashboardIcon,
   LineChartIcon,
-  LogOutIcon,
   MailIcon,
   MenuIcon,
+  MoonIcon,
   SearchIcon,
   SettingsIcon,
+  SunIcon,
   UsersIcon,
 } from "./Icons";
 import { ToastProvider } from "./ToastContext";
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
 
-const navItems = [
-  { label: "Dashboard", path: "/dashboard", icon: LayoutDashboardIcon },
-  { label: "Leads", path: "/leads", icon: UsersIcon },
-  { label: "Emails", path: "/emails", icon: MailIcon },
-  { label: "Templates", path: "/templates", icon: FileTextIcon },
-  { label: "Analytics", path: "/analytics", icon: LineChartIcon },
-  { label: "Settings", path: "/settings", icon: SettingsIcon },
-  { label: "Logout", path: "/logout", icon: LogOutIcon, action: "logout" },
+const navGroups = [
+  {
+    title: "Workspace",
+    items: [
+      { label: "Dashboard", path: "/dashboard", icon: LayoutDashboardIcon },
+      { label: "Analytics", path: "/analytics", icon: LineChartIcon },
+    ],
+  },
+  {
+    title: "Engagement",
+    items: [
+      { label: "Leads", path: "/leads", icon: UsersIcon },
+      { label: "Emails", path: "/emails", icon: MailIcon },
+      { label: "Templates", path: "/templates", icon: FileTextIcon },
+    ],
+  },
+  {
+    title: "Admin",
+    items: [{ label: "Settings", path: "/settings", icon: SettingsIcon }],
+  },
 ];
 
 const Layout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { signOut, user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [companyName, setCompanyName] = useState(
     () => localStorage.getItem("automation-company-name") || "Automation Portal"
@@ -86,105 +101,126 @@ const Layout = () => {
 
   return (
     <ToastProvider>
-      <div className="min-h-screen bg-slate-50 text-slate-900 flex app-shell">
+      <div
+        className={`min-h-screen bg-[var(--bg-app)] text-slate-900 dark:text-slate-100 flex app-shell ${
+          theme === "dark" ? "dark-shell" : ""
+        }`}
+      >
         <div
-          className={`fixed inset-0 z-40 bg-slate-900/40 transition-opacity md:hidden ${
+          className={`fixed inset-0 z-40 bg-slate-900/50 transition-opacity md:hidden ${
             isSidebarOpen ? "opacity-100" : "pointer-events-none opacity-0"
           }`}
           onClick={() => setIsSidebarOpen(false)}
           role="presentation"
         />
         <aside
-          className={`fixed inset-y-0 left-0 z-50 w-72 transform border-r border-slate-200 bg-white p-6 transition-transform duration-300 md:static md:translate-x-0 ${
+          className={`fixed inset-y-0 left-0 z-50 w-72 transform border-r border-slate-200 bg-white/90 p-6 backdrop-blur transition-transform duration-300 dark:border-slate-800 dark:bg-slate-950/80 md:static md:translate-x-0 ${
             isSidebarOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >
-          <div className="flex items-center gap-3 text-lg font-semibold text-slate-900">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white">
+          <div className="flex items-center gap-3 text-lg font-semibold text-slate-900 dark:text-white">
+            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-500/30">
               <BotIcon className="h-5 w-5" />
             </span>
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">AI Automation Portal</p>
-              <p>{companyName}</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
+                Pipeline OS
+              </p>
+              <p className="text-base font-semibold">{companyName}</p>
             </div>
           </div>
-          <nav className="mt-10 space-y-2 text-sm">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              if (item.action === "logout") {
-                return (
-                  <button
-                    key={`${item.label}-${item.path}`}
-                    type="button"
-                    onClick={() => {
-                      setIsSidebarOpen(false);
-                      handleLogout();
-                    }}
-                    className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                  >
-                    <Icon className="h-4 w-4" />
-                    {item.label}
-                  </button>
-                );
-              }
-              return (
-                <NavLink
-                  key={`${item.label}-${item.path}`}
-                  to={item.path}
-                  onClick={() => setIsSidebarOpen(false)}
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 rounded-xl px-4 py-2.5 transition ${
-                      isActive
-                        ? "bg-indigo-50 text-indigo-700"
-                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                    }`
-                  }
-                >
-                  <Icon className="h-4 w-4" />
-                  {item.label}
-                </NavLink>
-              );
-            })}
+          <nav className="mt-10 space-y-6 text-sm">
+            {navGroups.map((group) => (
+              <div key={group.title} className="space-y-2">
+                <p className="text-xs uppercase tracking-[0.28em] text-slate-400 dark:text-slate-500">
+                  {group.title}
+                </p>
+                <div className="space-y-1">
+                  {group.items.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <NavLink
+                        key={`${item.label}-${item.path}`}
+                        to={item.path}
+                        onClick={() => setIsSidebarOpen(false)}
+                        className={({ isActive }) =>
+                          `flex items-center gap-3 rounded-2xl px-4 py-2.5 transition ${
+                            isActive
+                              ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-100"
+                              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800/60 dark:hover:text-white"
+                          }`
+                        }
+                      >
+                        <Icon className="h-4 w-4" />
+                        {item.label}
+                      </NavLink>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </nav>
+          <div className="mt-8 rounded-2xl border border-slate-200 bg-white/70 p-4 text-xs text-slate-500 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-300">
+            <p className="font-semibold text-slate-700 dark:text-slate-100">
+              Workspace status
+            </p>
+            <p className="mt-1">All systems operational · 99.98% uptime</p>
+          </div>
         </aside>
         <div className="flex min-h-screen flex-1 flex-col">
-          <header className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200 bg-white/80 px-4 py-4 backdrop-blur md:px-8">
+          <header className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200 bg-white/80 px-4 py-4 backdrop-blur dark:border-slate-800 dark:bg-slate-950/80 md:px-8">
             <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={() => setIsSidebarOpen(true)}
-                className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-100 md:hidden"
+                className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 md:hidden"
                 aria-label="Open sidebar"
               >
                 <MenuIcon className="h-5 w-5" />
               </button>
               <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">
-                  AI Automation Portal
+                <p className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-slate-500">
+                  {companyName}
                 </p>
-                <h1 className="text-lg font-semibold text-slate-900">{pageTitle}</h1>
-                <p className="text-xs text-slate-500">{companyName}</p>
+                <h1 className="text-lg font-semibold text-slate-900 dark:text-white">
+                  {pageTitle}
+                </h1>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Revenue automation workspace
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-4">
               <div className="relative hidden md:flex items-center">
-                <SearchIcon className="absolute left-3 h-4 w-4 text-slate-400" />
+                <SearchIcon className="absolute left-3 h-4 w-4 text-slate-400 dark:text-slate-500" />
                 <input
                   type="search"
                   placeholder="Search leads, emails, templates"
-                  className="w-64 rounded-full border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm text-slate-600 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+                  className="w-64 rounded-full border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm text-slate-600 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                 />
               </div>
               <button
                 type="button"
-                className="relative rounded-full border border-slate-200 bg-white p-2 text-slate-600 hover:bg-slate-100"
+                onClick={toggleTheme}
+                className="rounded-full border border-slate-200 bg-white p-2 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                aria-label="Toggle theme"
+              >
+                {theme === "dark" ? (
+                  <SunIcon className="h-5 w-5" />
+                ) : (
+                  <MoonIcon className="h-5 w-5" />
+                )}
+              </button>
+              <button
+                type="button"
+                className="relative rounded-full border border-slate-200 bg-white p-2 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
                 aria-label="View notifications"
               >
                 <BellIcon className="h-5 w-5" />
                 <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-indigo-500" />
               </button>
               <Menu as="div" className="relative">
-                <Menu.Button className="flex items-center gap-3 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100">
+                <Menu.Button className="flex items-center gap-3 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">
                   <span className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 text-xs font-semibold text-white">
                     {initials}
                   </span>
@@ -200,13 +236,13 @@ const Layout = () => {
                   leaveFrom="opacity-100 translate-y-0"
                   leaveTo="opacity-0 translate-y-2"
                 >
-                  <Menu.Items className="absolute right-0 mt-2 w-48 rounded-xl border border-slate-200 bg-white p-2 text-sm text-slate-600 shadow-lg focus:outline-none">
+                  <Menu.Items className="absolute right-0 mt-2 w-52 rounded-xl border border-slate-200 bg-white p-2 text-sm text-slate-600 shadow-lg focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">
                     <Menu.Item>
                       {({ active }) => (
                         <button
                           type="button"
                           className={`w-full rounded-lg px-3 py-2 text-left ${
-                            active ? "bg-slate-100" : ""
+                            active ? "bg-slate-100 dark:bg-slate-800" : ""
                           }`}
                         >
                           View profile
@@ -218,7 +254,7 @@ const Layout = () => {
                         <button
                           type="button"
                           className={`w-full rounded-lg px-3 py-2 text-left ${
-                            active ? "bg-slate-100" : ""
+                            active ? "bg-slate-100 dark:bg-slate-800" : ""
                           }`}
                         >
                           Workspace settings
@@ -230,8 +266,8 @@ const Layout = () => {
                         <button
                           type="button"
                           onClick={handleLogout}
-                          className={`w-full rounded-lg px-3 py-2 text-left text-rose-600 ${
-                            active ? "bg-rose-50" : ""
+                          className={`w-full rounded-lg px-3 py-2 text-left text-rose-600 dark:text-rose-200 ${
+                            active ? "bg-rose-50 dark:bg-rose-500/10" : ""
                           }`}
                         >
                           Sign out

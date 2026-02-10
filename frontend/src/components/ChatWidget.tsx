@@ -216,11 +216,11 @@ const ChatWidget: React.FC = () => {
   return (
     <div className="fixed bottom-6 right-6 z-50">
       <div
-        className={`mb-4 w-80 rounded-2xl border border-slate-200 bg-white shadow-2xl transition-all duration-300 ${
+        className={`mb-4 w-80 rounded-2xl border border-slate-200 bg-white shadow-2xl transition-all duration-300 dark:border-slate-800 dark:bg-slate-950 ${
           isOpen ? "opacity-100 translate-y-0 scale-100" : "pointer-events-none opacity-0 translate-y-4 scale-95"
         }`}
       >
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-3">
             <div
               className="flex h-10 w-10 items-center justify-center rounded-full text-xs font-semibold text-white"
@@ -229,14 +229,18 @@ const ChatWidget: React.FC = () => {
               {assistantInitials}
             </div>
             <div>
-              <p className="text-sm font-semibold text-slate-900">{chatTitle}</p>
-              <p className="text-xs text-slate-500">Typically replies in seconds</p>
+              <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                {chatTitle}
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Typically replies in seconds
+              </p>
             </div>
           </div>
           <select
             value={language}
             onChange={(event) => setLanguage(event.target.value)}
-            className="rounded-full border border-slate-200 bg-white px-2 py-1 text-xs text-slate-600"
+            className="rounded-full border border-slate-200 bg-white px-2 py-1 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
             aria-label="Select language"
           >
             {["English", "Spanish", "French", "German", "Portuguese"].map((option) => (
@@ -248,7 +252,7 @@ const ChatWidget: React.FC = () => {
           <button
             type="button"
             onClick={() => setIsOpen(false)}
-            className="text-slate-400 hover:text-slate-600"
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
             aria-label="Close chat"
           >
             ✕
@@ -274,7 +278,7 @@ const ChatWidget: React.FC = () => {
                 className={`rounded-2xl px-3 py-2 text-sm leading-relaxed ${
                   message.role === "user"
                     ? "text-white"
-                    : "bg-slate-100 text-slate-700"
+                    : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200"
                 }`}
                 style={message.role === "user" ? { backgroundColor: brandColor } : undefined}
               >
@@ -290,7 +294,7 @@ const ChatWidget: React.FC = () => {
               >
                 {assistantInitials}
               </div>
-              <div className="flex items-center gap-1 rounded-2xl bg-slate-100 px-3 py-2 text-sm text-slate-500">
+              <div className="flex items-center gap-1 rounded-2xl bg-slate-100 px-3 py-2 text-sm text-slate-500 dark:bg-slate-800 dark:text-slate-300">
                 <span className="typing-dot" />
                 <span className="typing-dot animation-delay-150" />
                 <span className="typing-dot animation-delay-300" />
@@ -299,14 +303,14 @@ const ChatWidget: React.FC = () => {
           )}
           <div ref={bottomRef} />
         </div>
-        <form onSubmit={handleSubmit} className="border-t border-slate-200 px-3 py-3">
+        <form onSubmit={handleSubmit} className="border-t border-slate-200 px-3 py-3 dark:border-slate-800">
           <div className="flex items-center gap-2">
             <input
               type="text"
               value={input}
               onChange={(event) => setInput(event.target.value)}
               placeholder="Type your message..."
-              className="flex-1 rounded-full border border-slate-200 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="flex-1 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
             />
             <button
               type="submit"

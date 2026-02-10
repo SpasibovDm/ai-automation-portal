@@ -11,105 +11,76 @@ import {
   YAxis,
 } from "recharts";
 
+import Badge from "../components/Badge";
 import EmptyState from "../components/EmptyState";
 import { BotIcon, ClockIcon, MailIcon, SparklesIcon, UserPlusIcon } from "../components/Icons";
 import Skeleton from "../components/Skeleton";
 import StatCard from "../components/StatCard";
-import { getAnalyticsOverview, getDashboardActivity, getDashboardStats } from "../services/api";
+import { getDashboardSummary } from "../services/api";
 
 const Dashboard = () => {
-  const [stats, setStats] = useState({
-    total_leads: 0,
-    leads_today: 0,
-    emails_today: 0,
-    replies_sent: 0,
-  });
-  const [overview, setOverview] = useState(null);
-  const [activity, setActivity] = useState([]);
+  const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [overviewLoading, setOverviewLoading] = useState(true);
-  const [activityLoading, setActivityLoading] = useState(true);
   const [error, setError] = useState("");
   const [lastUpdated, setLastUpdated] = useState(null);
 
   useEffect(() => {
-    const loadStats = async () => {
+    const loadSummary = async () => {
       try {
-        const data = await getDashboardStats();
-        setStats(data);
+        const data = await getDashboardSummary();
+        setSummary(data);
         setLastUpdated(new Date());
       } catch (err) {
-        setError("Unable to load dashboard metrics.");
+        setError("Unable to load dashboard summary.");
       } finally {
         setLoading(false);
       }
     };
-    loadStats();
-  }, []);
-
-  useEffect(() => {
-    const loadOverview = async () => {
-      try {
-        const data = await getAnalyticsOverview();
-        setOverview(data);
-      } catch (err) {
-        // handled by empty states
-      } finally {
-        setOverviewLoading(false);
-      }
-    };
-    loadOverview();
-  }, []);
-
-  useEffect(() => {
-    const loadActivity = async () => {
-      try {
-        const data = await getDashboardActivity();
-        setActivity(data.recent_activity || []);
-      } catch (err) {
-        setActivity([]);
-      } finally {
-        setActivityLoading(false);
-      }
-    };
-    loadActivity();
+    loadSummary();
   }, []);
 
   const leadTrendData = useMemo(() => {
-    if (!overview?.lead_trend) {
+    if (!summary?.charts?.lead_trend) {
       return [];
     }
-    return overview.lead_trend.map((point) => ({
+    return summary.charts.lead_trend.map((point) => ({
       day: new Date(point.date).toLocaleDateString(undefined, { weekday: "short" }),
       leads: point.count,
     }));
-  }, [overview]);
+  }, [summary]);
 
   const emailCategoryData = useMemo(() => {
-    if (!overview?.email_category_breakdown) {
+    if (!summary?.charts?.email_category_breakdown) {
       return [];
     }
-    return overview.email_category_breakdown.map((item) => ({
+    return summary.charts.email_category_breakdown.map((item) => ({
       category: item.category,
       count: item.count,
     }));
-  }, [overview]);
+  }, [summary]);
 
-  const pendingActions = useMemo(
-    () => Math.max(stats.total_leads - stats.replies_sent, 0),
-    [stats]
+  const statusFunnel = useMemo(
+    () => summary?.charts?.lead_status_funnel || [],
+    [summary]
   );
 
-  const recentActivity = useMemo(() => activity.slice(0, 10), [activity]);
+  const recentActivity = useMemo(
+    () => summary?.recent_activity?.slice(0, 10) || [],
+    [summary]
+  );
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-slate-900">Dashboard</h2>
-          <p className="text-sm text-slate-500">Snapshot of incoming business activity.</p>
+          <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">
+            Revenue command center
+          </h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Live view of lead flow, inbox automation, and AI coverage.
+          </p>
         </div>
-        <div className="hidden items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs text-slate-500 md:flex">
+        <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs text-slate-500 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
           <ClockIcon className="h-4 w-4" />
           {lastUpdated
             ? `Updated ${lastUpdated.toLocaleTimeString([], {
@@ -136,28 +107,28 @@ const Dashboard = () => {
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
           <StatCard
             label="New Leads Today"
-            value={stats.leads_today}
+            value={summary?.kpis?.leads_today || 0}
             icon={<UserPlusIcon className="h-5 w-5" />}
             helper="High intent contacts"
-            trend={`${stats.total_leads} total`}
+            trend={`${summary?.kpis?.total_leads || 0} total`}
           />
           <StatCard
             label="Emails Processed"
-            value={stats.emails_today}
+            value={summary?.kpis?.emails_processed || 0}
             icon={<MailIcon className="h-5 w-5" />}
             helper="Last 24 hours"
-            trend={`${overview?.emails_processed || 0} in 30 days`}
+            trend={`${summary?.kpis?.emails_processed_30d || 0} in 30 days`}
           />
           <StatCard
             label="AI Replies Sent"
-            value={stats.replies_sent}
+            value={summary?.kpis?.ai_replies_sent || 0}
             icon={<BotIcon className="h-5 w-5" />}
             helper="Generated by AI"
-            trend={`${overview?.emails_auto_replied || 0} auto`}
+            trend={`${summary?.kpis?.ai_replies_sent_30d || 0} auto`}
           />
           <StatCard
             label="Pending Actions"
-            value={pendingActions}
+            value={summary?.kpis?.pending_actions || 0}
             icon={<ClockIcon className="h-5 w-5" />}
             helper="Awaiting review"
           />
@@ -165,18 +136,22 @@ const Dashboard = () => {
       )}
 
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
-        <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-md">
+        <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-md dark:border-slate-800 dark:bg-slate-900/80">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-semibold text-slate-900">Leads per day</h3>
-              <p className="text-xs text-slate-500">Last 7 days conversion funnel</p>
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+                Leads over time
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                New lead volume over the last 7 days
+              </p>
             </div>
-            <span className="text-xs text-emerald-600">
-              {overview?.leads_generated || 0} leads in 30 days
+            <span className="text-xs text-emerald-600 dark:text-emerald-300">
+              {summary?.kpis?.leads_generated_30d || 0} leads in 30 days
             </span>
           </div>
           <div className="mt-6 h-64">
-            {overviewLoading ? (
+            {loading ? (
               <Skeleton className="h-64" />
             ) : leadTrendData.length ? (
               <ResponsiveContainer width="100%" height="100%">
@@ -209,13 +184,17 @@ const Dashboard = () => {
             )}
           </div>
         </div>
-        <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-md">
+        <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-md dark:border-slate-800 dark:bg-slate-900/80">
           <div>
-            <h3 className="text-sm font-semibold text-slate-900">Emails by category</h3>
-            <p className="text-xs text-slate-500">Distribution of inbound conversations</p>
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+              Emails by category
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Distribution of inbound conversations
+            </p>
           </div>
           <div className="mt-6 h-64">
-            {overviewLoading ? (
+            {loading ? (
               <Skeleton className="h-64" />
             ) : emailCategoryData.length ? (
               <ResponsiveContainer width="100%" height="100%">
@@ -244,54 +223,108 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-md">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-sm font-semibold text-slate-900">Recent activity</h3>
-            <p className="text-xs text-slate-500">Latest 10 system events</p>
+      <div className="grid gap-6 lg:grid-cols-[1.15fr_1fr]">
+        <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-md dark:border-slate-800 dark:bg-slate-900/80">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+                Lead status funnel
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Pipeline distribution across active stages
+              </p>
+            </div>
+            <Badge variant="info">Pipeline health</Badge>
           </div>
-          <span className="text-xs text-slate-400">
-            {recentActivity.length} events
-          </span>
-        </div>
-        {activityLoading ? (
-          <div className="mt-6 space-y-3">
-            {Array.from({ length: 5 }).map((_, index) => (
-              <Skeleton key={`recent-${index}`} className="h-12" />
-            ))}
-          </div>
-        ) : recentActivity.length ? (
-          <div className="mt-6 overflow-hidden rounded-xl border border-slate-100">
-            <table className="min-w-full text-sm">
-              <thead className="bg-slate-50 text-slate-500">
-                <tr>
-                  <th className="text-left px-4 py-3 font-medium">Event</th>
-                  <th className="text-left px-4 py-3 font-medium">Details</th>
-                  <th className="text-left px-4 py-3 font-medium">Time</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentActivity.map((entry) => (
-                  <tr key={entry.id} className="border-t border-slate-100">
-                    <td className="px-4 py-3 font-medium text-slate-900">{entry.title}</td>
-                    <td className="px-4 py-3 text-slate-600">{entry.detail || "-"}</td>
-                    <td className="px-4 py-3 text-slate-500">
-                      {new Date(entry.created_at).toLocaleString()}
-                    </td>
-                  </tr>
+          <div className="mt-6 space-y-4">
+            {loading ? (
+              <div className="space-y-3">
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <Skeleton key={`funnel-${index}`} className="h-10" />
                 ))}
-              </tbody>
-            </table>
+              </div>
+            ) : statusFunnel.length ? (
+              statusFunnel.map((stage, index) => (
+                <div key={`${stage.status}-${index}`} className="space-y-2">
+                  <div className="flex items-center justify-between text-sm text-slate-600 dark:text-slate-300">
+                    <span className="capitalize">{stage.status.replace("_", " ")}</span>
+                    <span className="font-semibold text-slate-900 dark:text-white">
+                      {stage.count}
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800">
+                    <div
+                      className="h-2 rounded-full bg-gradient-to-r from-indigo-500 to-sky-400"
+                      style={{
+                        width: `${Math.max(stage.percentage || 0, 6)}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              ))
+            ) : (
+              <EmptyState
+                title="No pipeline data"
+                description="Lead stages will appear as you classify inbound requests."
+                icon={<SparklesIcon className="h-6 w-6" />}
+              />
+            )}
           </div>
-        ) : (
-          <div className="mt-6">
-            <EmptyState
-              title="No events yet"
-              description="New activity will appear as the team engages leads."
-              icon={<SparklesIcon className="h-6 w-6" />}
-            />
+        </div>
+        <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-md dark:border-slate-800 dark:bg-slate-900/80">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+                Recent activity
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Latest 10 system events
+              </p>
+            </div>
+            <span className="text-xs text-slate-400 dark:text-slate-500">
+              {recentActivity.length} events
+            </span>
           </div>
-        )}
+          {loading ? (
+            <div className="mt-6 space-y-3">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <Skeleton key={`recent-${index}`} className="h-12" />
+              ))}
+            </div>
+          ) : recentActivity.length ? (
+            <div className="mt-6 space-y-4">
+              {recentActivity.map((entry, index) => (
+                <div key={entry.id} className="flex gap-3">
+                  <div className="flex flex-col items-center">
+                    <span className="h-2.5 w-2.5 rounded-full bg-indigo-500" />
+                    {index !== recentActivity.length - 1 ? (
+                      <span className="mt-1 h-full w-px bg-slate-200 dark:bg-slate-700" />
+                    ) : null}
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-slate-900 dark:text-white">
+                      {entry.title}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {entry.detail || "No additional details"}
+                    </p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500">
+                      {new Date(entry.created_at).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-6">
+              <EmptyState
+                title="No events yet"
+                description="New activity will appear as the team engages leads."
+                icon={<SparklesIcon className="h-6 w-6" />}
+              />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

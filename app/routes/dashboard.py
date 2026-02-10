@@ -1,8 +1,10 @@
+from datetime import datetime, timedelta
+
 from fastapi import APIRouter, Depends
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user, get_db
-from datetime import datetime, timedelta
 
 from app.models.activity_log import ActivityLog
 from app.models.email_message import EmailMessage
@@ -11,9 +13,13 @@ from app.models.lead import Lead
 from app.schemas.dashboard import (
     DashboardActivityItem,
     DashboardActivityResponse,
+    DashboardCharts,
+    DashboardKpis,
+    DashboardSummary,
     DashboardStats,
     DashboardUrgentItem,
     DashboardUrgentResponse,
+    LeadStatusFunnelItem,
 )
 from app.services.email_analysis_service import classify_category
 
@@ -156,3 +162,169 @@ def get_urgent_items(
         ),
     ]
     return DashboardUrgentResponse(items=items)
+
+
+@router.get("/summary", response_model=DashboardSummary)
+def get_dashboard_summary(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+) -> DashboardSummary:
+    now = datetime.utcnow()
+    last_24h = now - timedelta(days=1)
+    last_30_days = now - timedelta(days=30)
+
+    total_leads = db.query(func.count(Lead.id)).filter(Lead.company_id == current_user.company_id).scalar() or 0
+    leads_today = (
+        db.query(func.count(Lead.id))
+        .filter(Lead.company_id == current_user.company_id, Lead.created_at >= last_24h)
+        .scalar()
+        or 0
+    )
+    emails_processed = (
+        db.query(func.count(EmailMessage.id))
+        .filter(
+            EmailMessage.company_id == current_user.company_id,
+            EmailMessage.received_at >= last_24h,
+        )
+        .scalar()
+        or 0
+    )
+    emails_processed_30d = (
+        db.query(func.count(EmailMessage.id))
+        .filter(
+            EmailMessage.company_id == current_user.company_id,
+            EmailMessage.received_at >= last_30_days,
+        )
+        .scalar()
+        or 0
+    )
+    ai_replies_sent = (
+        db.query(func.count(EmailReply.id))
+        .join(EmailMessage, EmailReply.email_id == EmailMessage.id)
+        .filter(
+            EmailMessage.company_id == current_user.company_id,
+            EmailReply.send_status == "sent",
+            EmailReply.created_at >= last_24h,
+        )
+        .scalar()
+        or 0
+    )
+    ai_replies_sent_30d = (
+        db.query(func.count(EmailReply.id))
+        .join(EmailMessage, EmailReply.email_id == EmailMessage.id)
+        .filter(
+            EmailMessage.company_id == current_user.company_id,
+            EmailReply.send_status == "sent",
+            EmailReply.created_at >= last_30_days,
+        )
+        .scalar()
+        or 0
+    )
+    leads_generated_30d = (
+        db.query(func.count(Lead.id))
+        .filter(Lead.company_id == current_user.company_id, Lead.created_at >= last_30_days)
+        .scalar()
+        or 0
+    )
+
+    open_leads = (
+        db.query(func.count(Lead.id))
+        .filter(
+            Lead.company_id == current_user.company_id,
+            Lead.status.notin_(["closed", "won", "lost"]),
+        )
+        .scalar()
+        or 0
+    )
+
+    kpis = DashboardKpis(
+        total_leads=total_leads,
+        leads_today=leads_today,
+        emails_processed=emails_processed,
+        ai_replies_sent=ai_replies_sent,
+        pending_actions=open_leads,
+        emails_processed_30d=emails_processed_30d,
+        ai_replies_sent_30d=ai_replies_sent_30d,
+        leads_generated_30d=leads_generated_30d,
+    )
+
+    today = now.date()
+    start_date = today - timedelta(days=6)
+    start_datetime = datetime.combine(start_date, datetime.min.time())
+    lead_counts = (
+        db.query(func.date(Lead.created_at), func.count(Lead.id))
+        .filter(
+            Lead.company_id == current_user.company_id,
+            Lead.created_at >= start_datetime,
+        )
+        .group_by(func.date(Lead.created_at))
+        .all()
+    )
+    lead_count_map: dict[datetime.date, int] = {}
+    for record_date, count in lead_counts:
+        if isinstance(record_date, str):
+            record_date = datetime.strptime(record_date, "%Y-%m-%d").date()
+        lead_count_map[record_date] = count
+    lead_trend = [
+        {"date": day, "count": int(lead_count_map.get(day, 0))}
+        for day in (start_date + timedelta(days=i) for i in range(7))
+    ]
+
+    emails_query = (
+        db.query(EmailMessage)
+        .filter(
+            EmailMessage.company_id == current_user.company_id,
+            EmailMessage.received_at >= last_30_days,
+        )
+        .all()
+    )
+    category_counts: dict[str, int] = {}
+    for email in emails_query:
+        category, _ = classify_category(email.subject, email.body)
+        category_counts[category] = category_counts.get(category, 0) + 1
+    if not category_counts:
+        category_counts = {"Other": 0}
+    email_category_breakdown = [
+        {"category": category, "count": count}
+        for category, count in sorted(category_counts.items(), key=lambda item: item[1], reverse=True)
+    ]
+
+    status_counts = (
+        db.query(Lead.status, func.count(Lead.id))
+        .filter(Lead.company_id == current_user.company_id)
+        .group_by(Lead.status)
+        .all()
+    )
+    status_map = {status: count for status, count in status_counts}
+    status_order = ["new", "contacted", "qualified", "closed", "won", "lost"]
+    status_total = sum(status_map.values()) or 0
+    lead_status_funnel = [
+        LeadStatusFunnelItem(
+            status=status,
+            count=int(status_map.get(status, 0)),
+            percentage=round((status_map.get(status, 0) / status_total) * 100, 2)
+            if status_total
+            else 0.0,
+        )
+        for status in status_order
+        if status_map.get(status, 0) or status_total
+    ]
+
+    logs = (
+        db.query(ActivityLog)
+        .filter(ActivityLog.company_id == current_user.company_id)
+        .order_by(ActivityLog.created_at.desc())
+        .limit(10)
+        .all()
+    )
+
+    charts = DashboardCharts(
+        lead_trend=lead_trend,
+        email_category_breakdown=email_category_breakdown,
+        lead_status_funnel=lead_status_funnel,
+    )
+    return DashboardSummary(
+        kpis=kpis,
+        charts=charts,
+        recent_activity=[_format_activity(entry) for entry in logs],
+    )

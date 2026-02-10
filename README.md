@@ -1,21 +1,22 @@
 # AI Automation Portal
 
-Full-stack B2B SaaS Business Automation Portal for managing inbound leads, incoming emails, and automated responses. The backend uses FastAPI + PostgreSQL + Redis + Celery, while the frontend uses React + Vite + TailwindCSS.
+Production-grade B2B SaaS for lead capture, inbox automation, and AI-assisted replies. The backend uses FastAPI + SQLAlchemy, while the frontend uses React + Vite + TailwindCSS. The stack is optimized for local development without Docker.
 
-## Local development (Docker)
+## Architecture
 
-```bash
-cp .env.example .env
-docker compose up --build
-```
+- Frontend: React + Vite + Tailwind, modular pages for dashboard, inbox, leads, and templates.
+- Backend: FastAPI, SQLAlchemy, JWT auth, multi-tenant scoping, structured logging.
+- Background tasks: Celery for AI reply generation and outbound sends (optional locally).
+- Storage: SQLite by default for local dev, PostgreSQL + Redis for production.
 
-The API will be available at `http://127.0.0.1:8000/docs` and the frontend at `http://127.0.0.1:5173`.
+## Screenshots
 
-The Docker stack uses PostgreSQL and Redis by default. SQLite is not used in Docker.
+![Dashboard](docs/screenshots/dashboard.svg)
+![Inbox](docs/screenshots/inbox.svg)
 
-## Backend (FastAPI)
+## Local development (no Docker)
 
-### Local development (venv)
+### Backend (FastAPI)
 
 ```bash
 python -m venv .venv
@@ -26,6 +27,35 @@ uvicorn app.main:app --reload
 ```
 
 The API will be available at `http://127.0.0.1:8000`, and Swagger docs at `http://127.0.0.1:8000/docs`.
+
+### Frontend (React)
+
+```bash
+cd frontend
+npm install
+cp .env.example .env
+npm run dev
+```
+
+The UI will be available at `http://127.0.0.1:5173`.
+
+## Local development (Docker - optional)
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+The API will be available at `http://127.0.0.1:8000/docs` and the frontend at `http://127.0.0.1:5173`.
+
+## Backend (FastAPI)
+
+### Key folders
+
+- `app/routes`: API endpoints
+- `app/services`: business logic, AI integrations
+- `app/models`: SQLAlchemy models
+- `app/schemas`: Pydantic request/response models
 
 ### Database migrations (Alembic)
 
@@ -123,28 +153,6 @@ curl -X GET http://127.0.0.1:8000/integrations/email/status \
 
 OAuth tokens are stored in the database for now; replace the placeholder storage with your preferred KMS/encryption strategy for production.
 
-## Frontend (React)
-
-### Local development
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-The UI will be available at `http://127.0.0.1:5173`. Configure the backend URL by creating `frontend/.env`:
-
-```bash
-VITE_API_URL="http://127.0.0.1:8000"
-```
-
-You can also start from the provided example file:
-
-```bash
-cp frontend/.env.example frontend/.env
-```
-
 ## Multi-tenant scoping
 
 Auto-reply templates, leads, and emails are scoped to a company. Template creation and retrieval always use the requesting admin's `company_id`, and auto-replies are generated only when a matching template exists for the lead/email's company.
@@ -162,16 +170,6 @@ Auto-reply templates, leads, and emails are scoped to a company. Template creati
 - Structured logging is enabled in the API middleware.
 - Sentry can be enabled by setting `SENTRY_DSN` and `SENTRY_ENVIRONMENT`.
 
-## Production deployment
-
-Use the production compose file to run Postgres, Redis, API, Celery worker, and the Nginx-served frontend:
-
-```bash
-docker compose -f docker-compose.prod.yml up --build
-```
-
-Set `ALLOWED_ORIGINS` to your frontend domain and update the `.env` secrets before deploying. The production frontend is built with `VITE_API_URL=/api`, which is proxied to the FastAPI container by Nginx.
-
 ## Environment variables
 
 Create a `.env` file from `.env.example` and update secrets as needed:
@@ -179,7 +177,7 @@ Create a `.env` file from `.env.example` and update secrets as needed:
 ```bash
 APP_NAME=Business Automation Portal
 SECRET_KEY=change-this-secret
-DATABASE_URL=postgresql+psycopg2://postgres:postgres@db:5432/automation
+DATABASE_URL=sqlite:///./app.db
 REDIS_URL=redis://redis:6379/0
 AI_API_KEY=change-this-key
 ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
@@ -187,7 +185,7 @@ ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 
 ## AI Chat Assistant
 
-The portal now ships with a floating AI chat widget that can be embedded in any React page.
+The portal ships with a floating AI chat widget that can be embedded in any React page.
 
 ### Endpoints
 

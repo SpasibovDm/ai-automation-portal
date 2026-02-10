@@ -14,10 +14,12 @@ import {
   DocumentTextIcon,
   EnvelopeIcon,
   MagnifyingGlassIcon,
+  MoonIcon as HeroMoonIcon,
   PaintBrushIcon,
   ShieldCheckIcon,
   SparklesIcon as HeroSparklesIcon,
   Squares2X2Icon,
+  SunIcon as HeroSunIcon,
   UserPlusIcon as HeroUserPlusIcon,
   UsersIcon as HeroUsersIcon,
   PaperAirplaneIcon,
@@ -44,3 +46,5 @@ export const PaintbrushIcon = (props) => <PaintBrushIcon {...props} />;
 export const ShieldIcon = (props) => <ShieldCheckIcon {...props} />;
 export const ToggleLeftIcon = (props) => <AdjustmentsHorizontalIcon {...props} />;
 export const LogOutIcon = (props) => <ArrowLeftOnRectangleIcon {...props} />;
+export const SunIcon = (props) => <HeroSunIcon {...props} />;
+export const MoonIcon = (props) => <HeroMoonIcon {...props} />;

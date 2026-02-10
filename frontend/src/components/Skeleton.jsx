@@ -1,7 +1,11 @@
 import React from "react";
 
 const Skeleton = ({ className = "" }) => {
-  return <div className={`animate-pulse rounded-xl bg-slate-200/70 ${className}`} />;
+  return (
+    <div
+      className={`animate-pulse rounded-xl bg-slate-200/70 dark:bg-slate-800/70 ${className}`}
+    />
+  );
 };
 
 export default Skeleton;

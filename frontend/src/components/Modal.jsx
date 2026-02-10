@@ -15,7 +15,7 @@ const Modal = ({ isOpen, onClose, title, children }) => {
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm" />
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" />
         </Transition.Child>
 
         <div className="fixed inset-0 overflow-y-auto">
@@ -29,15 +29,15 @@ const Modal = ({ isOpen, onClose, title, children }) => {
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-xl">
+              <Dialog.Panel className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-xl dark:bg-slate-900">
                 <div className="flex items-start justify-between">
-                  <Dialog.Title className="text-lg font-semibold text-slate-900">
+                  <Dialog.Title className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                     {title}
                   </Dialog.Title>
                   <button
                     type="button"
                     onClick={onClose}
-                    className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                    className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
                     aria-label="Close modal"
                   >
                     <XMarkIcon className="h-5 w-5" />

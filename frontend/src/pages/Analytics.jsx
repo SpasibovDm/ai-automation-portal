@@ -108,8 +108,8 @@ const Analytics = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-semibold text-slate-900">Analytics</h2>
-        <p className="text-sm text-slate-500">
+        <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">Analytics</h2>
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           Deep insights into email performance and lead conversion.
         </p>
       </div>
@@ -153,13 +153,17 @@ const Analytics = () => {
             />
           </div>
           <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-            <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-md">
+            <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-md dark:border-slate-800 dark:bg-slate-900/80">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-semibold text-slate-900">Leads per week</h3>
-                  <p className="text-xs text-slate-500">Last 7 days volume</p>
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+                    Leads per week
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Last 7 days volume
+                  </p>
                 </div>
-                <span className="text-xs text-emerald-600">
+                <span className="text-xs text-emerald-600 dark:text-emerald-300">
                   {overview?.leads_generated || 0} leads this month
                 </span>
               </div>
@@ -191,13 +195,19 @@ const Analytics = () => {
                 )}
               </div>
             </div>
-            <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-md">
+            <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-md dark:border-slate-800 dark:bg-slate-900/80">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-semibold text-slate-900">AI reply rate</h3>
-                  <p className="text-xs text-slate-500">Automation adoption</p>
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+                    AI reply rate
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Automation adoption
+                  </p>
                 </div>
-                <span className="text-xs text-slate-400">{autoReplyRate}%</span>
+                <span className="text-xs text-slate-400 dark:text-slate-500">
+                  {autoReplyRate}%
+                </span>
               </div>
               <div className="mt-6 h-56">
                 <ResponsiveContainer width="100%" height="100%">
@@ -218,19 +228,23 @@ const Analytics = () => {
                     </Pie>
                   </PieChart>
                 </ResponsiveContainer>
-                <div className="mt-4 text-center text-sm text-slate-600">
+                <div className="mt-4 text-center text-sm text-slate-600 dark:text-slate-300">
                   {autoReplyRate}% of replies sent automatically
                 </div>
               </div>
             </div>
           </div>
-          <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-md">
+          <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-md dark:border-slate-800 dark:bg-slate-900/80">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-semibold text-slate-900">Email volume trend</h3>
-                <p className="text-xs text-slate-500">Last 7 days inbound volume</p>
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+                  Email volume trend
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Last 7 days inbound volume
+                </p>
               </div>
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-slate-400 dark:text-slate-500">
                 {overview?.emails_processed || 0} emails this month
               </span>
             </div>

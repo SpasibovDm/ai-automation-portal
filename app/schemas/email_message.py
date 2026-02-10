@@ -3,6 +3,8 @@ from typing import Optional
 
 from pydantic import BaseModel, EmailStr, Field
 
+from app.schemas.enums import EmailStatus
+
 
 class EmailReplyRead(BaseModel):
     id: int
@@ -38,7 +40,7 @@ class EmailMessageRead(EmailMessageBase):
     lead_id: Optional[int] = None
     company_id: Optional[int] = None
     preview: Optional[str] = None
-    status: Optional[str] = None
+    status: Optional[EmailStatus] = None
     category: Optional[str] = None
     priority: Optional[str] = None
     confidence: Optional[int] = None

@@ -1,0 +1,29 @@
+<svg width="1200" height="675" viewBox="0 0 1200 675" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="675" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#EEF2FF"/>
+      <stop offset="1" stop-color="#E0F2FE"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#F8FAFC"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="675" rx="28" fill="url(#bg)"/>
+  <rect x="80" y="90" width="1040" height="80" rx="20" fill="white" opacity="0.9"/>
+  <rect x="80" y="200" width="320" height="160" rx="24" fill="url(#card)" stroke="#E2E8F0"/>
+  <rect x="440" y="200" width="320" height="160" rx="24" fill="url(#card)" stroke="#E2E8F0"/>
+  <rect x="800" y="200" width="320" height="160" rx="24" fill="url(#card)" stroke="#E2E8F0"/>
+  <rect x="80" y="390" width="680" height="200" rx="24" fill="white" stroke="#E2E8F0"/>
+  <rect x="800" y="390" width="320" height="200" rx="24" fill="white" stroke="#E2E8F0"/>
+  <text x="120" y="140" font-family="Space Grotesk, Arial" font-size="28" fill="#0F172A">Revenue command center</text>
+  <text x="120" y="240" font-family="Space Grotesk, Arial" font-size="18" fill="#64748B">Leads today</text>
+  <text x="120" y="275" font-family="Space Grotesk, Arial" font-size="34" fill="#1D4ED8">128</text>
+  <text x="480" y="240" font-family="Space Grotesk, Arial" font-size="18" fill="#64748B">Emails processed</text>
+  <text x="480" y="275" font-family="Space Grotesk, Arial" font-size="34" fill="#1D4ED8">412</text>
+  <text x="840" y="240" font-family="Space Grotesk, Arial" font-size="18" fill="#64748B">AI replies sent</text>
+  <text x="840" y="275" font-family="Space Grotesk, Arial" font-size="34" fill="#1D4ED8">276</text>
+  <text x="120" y="430" font-family="Space Grotesk, Arial" font-size="18" fill="#64748B">Leads over time</text>
+  <text x="840" y="430" font-family="Space Grotesk, Arial" font-size="18" fill="#64748B">Recent activity</text>
+  <path d="M140 520 C220 470 300 520 380 470 C460 420 540 460 620 410" stroke="#4F46E5" stroke-width="6" fill="none"/>
+</svg>

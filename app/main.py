@@ -4,6 +4,7 @@ import uuid
 from typing import Callable
 
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
@@ -50,6 +51,22 @@ app.add_exception_handler(
     RateLimitExceeded,
     lambda r, e: JSONResponse(status_code=429, content={"detail": "Rate limit exceeded"}),
 )
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(_: Request, exc: RequestValidationError) -> JSONResponse:
+    errors = []
+    for error in exc.errors():
+        field_path = ".".join(str(item) for item in error.get("loc", []) if item != "body")
+        errors.append(
+            {
+                "field": field_path or "body",
+                "message": error.get("msg", "Invalid value"),
+                "type": error.get("type", "validation_error"),
+            }
+        )
+    return JSONResponse(
+        status_code=422,
+        content={"detail": "Validation failed", "errors": errors},
+    )
 app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(
     CORSMiddleware,

@@ -75,8 +75,8 @@ const Settings = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-semibold text-slate-900">Settings</h2>
-        <p className="text-sm text-slate-500">
+        <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">Settings</h2>
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           Manage workspace details and automation preferences.
         </p>
       </div>
@@ -91,35 +91,47 @@ const Settings = () => {
       ) : (
         <form
           onSubmit={handleSave}
-          className="rounded-2xl border border-slate-100 bg-white p-6 shadow-md space-y-5 max-w-2xl"
+          className="rounded-2xl border border-slate-100 bg-white p-6 shadow-md space-y-5 max-w-2xl dark:border-slate-800 dark:bg-slate-900/80"
         >
           <div>
-            <h3 className="text-sm font-semibold text-slate-700">Company profile</h3>
-            <p className="text-xs text-slate-500">Update the core account settings.</p>
+            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+              Company profile
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Update the core account settings.
+            </p>
           </div>
           <div>
-            <label className="text-sm font-medium text-slate-700">Company name</label>
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
+              Company name
+            </label>
             <input
               name="name"
               value={formState.name}
               onChange={handleChange}
-              className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2"
+              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
             />
           </div>
           <div>
-            <label className="text-sm font-medium text-slate-700">Support email</label>
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
+              Support email
+            </label>
             <input
               name="supportEmail"
               value={supportEmail}
               onChange={(event) => setSupportEmail(event.target.value)}
-              className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2"
+              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
             />
           </div>
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/60">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-700">Auto-reply</p>
-                <p className="text-xs text-slate-500">AI replies for inbound messages</p>
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                  Auto-reply
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  AI replies for inbound messages
+                </p>
               </div>
               <button
                 type="button"
@@ -130,7 +142,9 @@ const Settings = () => {
                   }))
                 }
                 className={`flex h-7 w-12 items-center rounded-full p-1 transition ${
-                  formState.auto_reply_enabled ? "bg-indigo-600" : "bg-slate-300"
+                  formState.auto_reply_enabled
+                    ? "bg-indigo-600"
+                    : "bg-slate-300 dark:bg-slate-700"
                 }`}
               >
                 <span
@@ -140,12 +154,12 @@ const Settings = () => {
                 />
               </button>
             </div>
-            <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
+            <div className="mt-3 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
               <ToggleLeftIcon className="h-4 w-4" />
               {toggledLabel}
             </div>
           </div>
-          <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 text-xs text-slate-500">
+          <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 text-xs text-slate-500 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400">
             <div className="flex items-center gap-2">
               <ShieldIcon className="h-4 w-4 text-indigo-500" />
               <span>API key available in the admin settings for integrations.</span>

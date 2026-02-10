@@ -21,9 +21,25 @@ def generate_email_reply_task(email_id: int, company_id: int) -> None:
         email_record = session.query(EmailMessage).filter(EmailMessage.id == email_id).first()
         company_record = session.query(Company).filter(Company.id == company_id).first()
         if not email_record or not company_record or not company_record.auto_reply_enabled:
+            logger.warning(
+                "ai.reply.skipped",
+                extra={
+                    "email_id": email_id,
+                    "company_id": company_id,
+                    "reason": "missing_email_or_company_or_disabled",
+                },
+            )
             return
         template = get_template(session, "email", company_id)
         if not template:
+            logger.warning(
+                "ai.reply.skipped",
+                extra={
+                    "email_id": email_id,
+                    "company_id": company_id,
+                    "reason": "no_template",
+                },
+            )
             return
         auto_reply = generate_ai_reply_from_template(
             template,
@@ -39,6 +55,15 @@ def generate_email_reply_task(email_id: int, company_id: int) -> None:
             email=email_record,
             subject=auto_reply["subject"],
             body=auto_reply["body"],
+        )
+        logger.info(
+            "ai.reply.generated",
+            extra={
+                "reply_id": reply.id,
+                "email_id": email_record.id,
+                "company_id": company_id,
+                "trigger": "automation",
+            },
         )
         log_activity(
             session,
@@ -69,12 +94,29 @@ def send_email_reply_task(self, reply_id: int) -> None:
             reply.send_error = "No connected email integration"
             session.add(reply)
             session.commit()
+            logger.warning(
+                "email.send.skipped",
+                extra={
+                    "reply_id": reply.id,
+                    "company_id": email.company_id if email else None,
+                    "reason": "no_integration",
+                },
+            )
             return
         reply.send_attempted_at = reply.send_attempted_at or datetime.utcnow()
         reply.provider = integration.provider
         session.add(reply)
         session.commit()
         send_email_reply(session, reply=reply, integration=integration)
+        logger.info(
+            "email.sent",
+            extra={
+                "reply_id": reply.id,
+                "email_id": reply.email_id,
+                "company_id": email.company_id if email else None,
+                "provider": integration.provider,
+            },
+        )
         log_activity(
             session,
             action="update",

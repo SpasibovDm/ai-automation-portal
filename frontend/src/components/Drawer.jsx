@@ -15,7 +15,7 @@ const Drawer = ({ isOpen, onClose, title, children }) => {
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm" />
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" />
         </Transition.Child>
 
         <div className="fixed inset-0 overflow-hidden">
@@ -30,16 +30,16 @@ const Drawer = ({ isOpen, onClose, title, children }) => {
                 leaveFrom="translate-x-0"
                 leaveTo="translate-x-full"
               >
-                <Dialog.Panel className="pointer-events-auto w-screen max-w-xl bg-white shadow-2xl">
+                <Dialog.Panel className="pointer-events-auto w-screen max-w-xl bg-white shadow-2xl dark:bg-slate-900">
                   <div className="flex h-full flex-col">
-                    <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-                      <Dialog.Title className="text-lg font-semibold text-slate-900">
+                    <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 dark:border-slate-800">
+                      <Dialog.Title className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                         {title}
                       </Dialog.Title>
                       <button
                         type="button"
                         onClick={onClose}
-                        className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                        className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
                         aria-label="Close drawer"
                       >
                         <XMarkIcon className="h-5 w-5" />

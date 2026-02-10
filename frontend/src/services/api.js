@@ -74,6 +74,11 @@ export const getDashboardUrgent = async () => {
   return response.data;
 };
 
+export const getDashboardSummary = async () => {
+  const response = await api.get("/dashboard/summary");
+  return response.data;
+};
+
 export const getLeads = async () => {
   const response = await api.get("/leads");
   return response.data;

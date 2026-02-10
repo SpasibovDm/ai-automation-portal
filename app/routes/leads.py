@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -9,6 +11,7 @@ from app.services.activity_service import log_activity
 from app.services.lead_service import create_lead, list_leads, update_lead
 
 router = APIRouter(prefix="/leads", tags=["leads"])
+logger = logging.getLogger("app.leads")
 
 
 @router.get("/", response_model=list[LeadRead])
@@ -95,6 +98,7 @@ def update_lead_status_only(
     )
     if not lead:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead not found")
+    previous_status = lead.status
     lead.status = payload.status
     db.add(lead)
     db.commit()
@@ -107,6 +111,16 @@ def update_lead_status_only(
         company_id=current_user.company_id,
         user_id=current_user.id,
         description=f"Lead status updated to {payload.status}",
+    )
+    logger.info(
+        "lead.status_changed",
+        extra={
+            "lead_id": lead.id,
+            "company_id": current_user.company_id,
+            "user_id": current_user.id,
+            "previous_status": previous_status,
+            "new_status": payload.status,
+        },
     )
     return lead
 

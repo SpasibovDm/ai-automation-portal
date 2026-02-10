@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import joinedload
@@ -18,6 +20,7 @@ from app.services.email_service import create_email_reply
 from app.services.llm_service import generate_ai_reply
 
 router = APIRouter(prefix="/emails", tags=["emails"])
+logger = logging.getLogger("app.emails")
 
 
 @router.get("/", response_model=list[EmailMessageRead])
@@ -154,6 +157,16 @@ def generate_email_reply(
         company_id=current_user.company_id,
         user_id=current_user.id,
         description="AI reply generated on demand",
+    )
+    logger.info(
+        "ai.reply.generated",
+        extra={
+            "reply_id": reply.id,
+            "email_id": email.id,
+            "company_id": current_user.company_id,
+            "user_id": current_user.id,
+            "trigger": "manual",
+        },
     )
 
     category, confidence = classify_category(email.subject, email.body)
