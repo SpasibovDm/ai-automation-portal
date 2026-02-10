@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 
 
 class Token(BaseModel):
@@ -10,3 +10,7 @@ class Token(BaseModel):
 
 class RefreshTokenRequest(BaseModel):
     refresh_token: str
+
+
+class MagicLinkRequest(BaseModel):
+    email: EmailStr

@@ -59,6 +59,11 @@ export const register = async (payload) => {
   return response.data;
 };
 
+export const requestMagicLink = async (email) => {
+  const response = await api.post("/auth/magic-link", { email });
+  return response.data;
+};
+
 export const getDashboardStats = async () => {
   const response = await api.get("/dashboard/stats");
   return response.data;
@@ -155,6 +160,11 @@ export const getCompanySettings = async () => {
 
 export const updateCompanySettings = async (payload) => {
   const response = await api.put("/companies/me", payload);
+  return response.data;
+};
+
+export const updatePassword = async (payload) => {
+  const response = await api.put("/users/me/password", payload);
   return response.data;
 };
 

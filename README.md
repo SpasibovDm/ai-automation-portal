@@ -14,6 +14,16 @@ Production-grade B2B SaaS for lead capture, inbox automation, and AI-assisted re
 ![Dashboard](docs/screenshots/dashboard.svg)
 ![Inbox](docs/screenshots/inbox.svg)
 
+## Public entry flow
+
+- `/` is the public landing page (no login required).
+- `/demo` is a read-only demo dashboard preloaded with sample data.
+- `/app/*` is the authenticated workspace (requires login).
+- `/login` and `/register` are secondary routes for existing users or email-first onboarding.
+- `/settings` redirects to `/app/settings` for account + password setup.
+
+The onboarding flow is email-first. Users enter an email, receive a magic link (simulated locally), and can optionally set a password later in Settings.
+
 ## Local development (no Docker)
 
 ### Backend (FastAPI)
@@ -85,6 +95,27 @@ The first user registered for a new company is promoted to the `admin` role auto
 curl -X POST http://127.0.0.1:8000/auth/login \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "username=operator@example.com&password=change-me"
+```
+
+#### Magic link (email-first)
+
+```bash
+curl -X POST http://127.0.0.1:8000/auth/magic-link \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "operator@example.com"
+  }'
+```
+
+#### Set password (optional)
+
+```bash
+curl -X PUT http://127.0.0.1:8000/users/me/password \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "password": "new-strong-password"
+  }'
 ```
 
 #### Create a response template (admin only)

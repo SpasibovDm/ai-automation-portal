@@ -377,7 +377,7 @@ const Leads = () => {
                 >
                   Save status
                 </Button>
-                <Link to={`/leads/${selectedLead.id}`} className="text-sm text-indigo-600">
+                <Link to={`/app/leads/${selectedLead.id}`} className="text-sm text-indigo-600">
                   View full profile
                 </Link>
               </div>

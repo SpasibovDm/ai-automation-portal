@@ -176,7 +176,7 @@ const LeadDetails = () => {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <Link
-            to="/leads"
+            to="/app/leads"
             className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-slate-500"
           >
             Back to leads

@@ -24,3 +24,7 @@ class UserRead(UserBase):
 
 class UserRoleUpdate(BaseModel):
     role: str
+
+
+class UserPasswordUpdate(BaseModel):
+    password: str

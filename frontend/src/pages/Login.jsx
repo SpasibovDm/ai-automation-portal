@@ -23,7 +23,7 @@ const Login = () => {
     setLoading(true);
     try {
       await signIn(formState.email, formState.password);
-      navigate("/dashboard");
+      navigate("/app/dashboard");
     } catch (err) {
       setError("Login failed. Please check your credentials.");
     } finally {
@@ -47,10 +47,10 @@ const Login = () => {
             AI Automation Portal
           </p>
           <h1 className="mt-3 text-2xl font-semibold text-slate-900 dark:text-white">
-            Welcome back
+            Sign in
           </h1>
           <p className="text-sm text-slate-500 mt-2 dark:text-slate-400">
-            Sign in to manage leads, inbox automation, and AI replies.
+            Use your password to access your automated inbox workspace.
           </p>
         </div>
         <form className="space-y-4" onSubmit={handleSubmit}>
@@ -91,7 +91,13 @@ const Login = () => {
           <p className="text-sm text-slate-500 text-center dark:text-slate-400">
             New here?{" "}
             <Link className="text-slate-900 font-medium dark:text-white" to="/register">
-              Create an account
+              Get started with email
+            </Link>
+          </p>
+          <p className="text-xs text-center text-slate-400 dark:text-slate-500">
+            Looking for the demo?{" "}
+            <Link className="text-slate-900 font-medium dark:text-white" to="/demo">
+              Try demo
             </Link>
           </p>
         </form>

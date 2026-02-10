@@ -1,6 +1,10 @@
 import React, { createContext, useContext, useMemo, useState } from "react";
 
-import { login as loginRequest, register as registerRequest } from "../services/api";
+import {
+  login as loginRequest,
+  register as registerRequest,
+  requestMagicLink,
+} from "../services/api";
 
 const AuthContext = createContext(null);
 
@@ -12,6 +16,16 @@ export const AuthProvider = ({ children }) => {
 
   const signIn = async (email, password) => {
     const data = await loginRequest(email, password);
+    localStorage.setItem("accessToken", data.access_token);
+    localStorage.setItem("refreshToken", data.refresh_token);
+    localStorage.setItem(userEmailKey, email);
+    setToken(data.access_token);
+    setUserEmail(email);
+    return data;
+  };
+
+  const signInWithMagicLink = async (email) => {
+    const data = await requestMagicLink(email);
     localStorage.setItem("accessToken", data.access_token);
     localStorage.setItem("refreshToken", data.refresh_token);
     localStorage.setItem(userEmailKey, email);
@@ -37,6 +51,7 @@ export const AuthProvider = ({ children }) => {
       token,
       user: userEmail ? { email: userEmail } : null,
       signIn,
+      signInWithMagicLink,
       signOut,
       registerAccount,
     }),

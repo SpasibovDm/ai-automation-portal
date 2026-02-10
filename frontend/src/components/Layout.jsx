@@ -25,21 +25,21 @@ const navGroups = [
   {
     title: "Workspace",
     items: [
-      { label: "Dashboard", path: "/dashboard", icon: LayoutDashboardIcon },
-      { label: "Analytics", path: "/analytics", icon: LineChartIcon },
+      { label: "Dashboard", path: "/app/dashboard", icon: LayoutDashboardIcon },
+      { label: "Analytics", path: "/app/analytics", icon: LineChartIcon },
     ],
   },
   {
     title: "Engagement",
     items: [
-      { label: "Leads", path: "/leads", icon: UsersIcon },
-      { label: "Emails", path: "/emails", icon: MailIcon },
-      { label: "Templates", path: "/templates", icon: FileTextIcon },
+      { label: "Leads", path: "/app/leads", icon: UsersIcon },
+      { label: "Emails", path: "/app/emails", icon: MailIcon },
+      { label: "Templates", path: "/app/templates", icon: FileTextIcon },
     ],
   },
   {
     title: "Admin",
-    items: [{ label: "Settings", path: "/settings", icon: SettingsIcon }],
+    items: [{ label: "Settings", path: "/app/settings", icon: SettingsIcon }],
   },
 ];
 
@@ -55,7 +55,7 @@ const Layout = () => {
 
   const handleLogout = () => {
     signOut();
-    navigate("/login");
+    navigate("/");
   };
 
   useEffect(() => {
@@ -85,16 +85,16 @@ const Layout = () => {
 
   const pageTitle = useMemo(() => {
     const path = location.pathname;
-    if (path.startsWith("/leads/")) {
+    if (path.startsWith("/app/leads/")) {
       return "Lead Details";
     }
     const titles = {
-      "/dashboard": "Dashboard",
-      "/leads": "Leads",
-      "/emails": "Emails",
-      "/templates": "Templates",
-      "/analytics": "Analytics",
-      "/settings": "Settings",
+      "/app/dashboard": "Dashboard",
+      "/app/leads": "Leads",
+      "/app/emails": "Emails",
+      "/app/templates": "Templates",
+      "/app/analytics": "Analytics",
+      "/app/settings": "Settings",
     };
     return titles[path] || "Dashboard";
   }, [location.pathname]);
@@ -253,6 +253,7 @@ const Layout = () => {
                       {({ active }) => (
                         <button
                           type="button"
+                          onClick={() => navigate("/app/settings")}
                           className={`w-full rounded-lg px-3 py-2 text-left ${
                             active ? "bg-slate-100 dark:bg-slate-800" : ""
                           }`}
