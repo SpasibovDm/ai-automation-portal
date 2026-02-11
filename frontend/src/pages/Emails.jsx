@@ -4,6 +4,7 @@ import AIExplanationPanel from "../components/AIExplanationPanel";
 import Badge from "../components/Badge";
 import Button from "../components/Button";
 import EmptyState from "../components/EmptyState";
+import PitchCallout from "../components/PitchCallout";
 import Skeleton from "../components/Skeleton";
 import StatusBadge from "../components/StatusBadge";
 import { MailIcon, SearchIcon } from "../components/Icons";
@@ -14,7 +15,7 @@ import { buildAIExplanation } from "../utils/aiExplainability";
 
 const Emails = () => {
   const { addToast } = useToast();
-  const { workspace, userRole, can, getPermissionHint, scopeCollection, consent } = useWorkspace();
+  const { workspace, userRole, can, getPermissionHint, scopeCollection, consent, pitchMode } = useWorkspace();
   const [emails, setEmails] = useState([]);
   const [selectedEmailId, setSelectedEmailId] = useState(null);
   const [selectedEmail, setSelectedEmail] = useState(null);
@@ -239,6 +240,15 @@ const Emails = () => {
         </p>
       </div>
 
+      {pitchMode ? (
+        <PitchCallout
+          feature="AI inbox triage keeps high-value threads from getting buried."
+          problem="Revenue conversations are lost when every message looks equally urgent."
+          kpi="First-response time, lead conversion, and AI draft acceptance."
+          impact="AI reply saves 3-5 minutes per conversation while keeping teams in control."
+        />
+      ) : null}
+
       {loading ? (
         <div className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">
           <Skeleton className="h-96" />
@@ -372,6 +382,15 @@ const Emails = () => {
                 ) : null}
 
                 <div>
+                  {pitchMode ? (
+                    <PitchCallout
+                      className="mb-3"
+                      feature="AI draft assistant accelerates first response without removing human review."
+                      problem="Manual drafting introduces delay and inconsistent tone."
+                      kpi="Average response time and send-ready acceptance rate."
+                      impact="Consistent drafts help teams respond quickly with fewer rewrites."
+                    />
+                  ) : null}
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-xs uppercase text-slate-400 dark:text-slate-500">AI draft response</p>
                     <Button

@@ -7,6 +7,7 @@ import Badge from "../components/Badge";
 import Button from "../components/Button";
 import DecisionSimulator from "../components/DecisionSimulator";
 import EmptyState from "../components/EmptyState";
+import PitchCallout from "../components/PitchCallout";
 import Skeleton from "../components/Skeleton";
 import StatusBadge from "../components/StatusBadge";
 import { MailIcon, MessageSquareIcon, UserPlusIcon } from "../components/Icons";
@@ -26,7 +27,7 @@ const statusOptions = ["new", "contacted", "qualified", "closed"];
 const LeadDetails = () => {
   const { leadId } = useParams();
   const { addToast } = useToast();
-  const { workspace, userRole, can, getPermissionHint, scopeCollection, consent } = useWorkspace();
+  const { workspace, userRole, can, getPermissionHint, scopeCollection, consent, pitchMode } = useWorkspace();
 
   const [lead, setLead] = useState(null);
   const [leadLoading, setLeadLoading] = useState(true);
@@ -329,6 +330,15 @@ const LeadDetails = () => {
         </p>
       </div>
 
+      {pitchMode ? (
+        <PitchCallout
+          feature="Lead detail combines score reasoning, timeline, and reply controls in one place."
+          problem="Teams cannot move fast when context is fragmented across multiple tools."
+          kpi="Cycle time from inbound lead to qualified opportunity."
+          impact="Faster qualification with transparent AI decisions and audit-safe human overrides."
+        />
+      ) : null}
+
       {leadLoading ? (
         <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
           <Skeleton className="h-64" />
@@ -545,6 +555,15 @@ const LeadDetails = () => {
               onApply={handleApplySimulation}
               disabled={simulatorDisabled}
             />
+            {pitchMode ? (
+              <PitchCallout
+                className="mt-3"
+                feature="What-if simulator makes AI behavior controllable during demos and onboarding."
+                problem="Buyers distrust AI when they cannot test how decisions change."
+                kpi="AI adoption rate and policy confidence."
+                impact="Live parameter tuning proves this is a controllable system, not a black box."
+              />
+            ) : null}
             {simulatorHint ? (
               <p className="text-xs text-slate-400 dark:text-slate-500">{simulatorHint}</p>
             ) : null}

@@ -13,6 +13,7 @@ import {
   MailIcon,
   MenuIcon,
   MoonIcon,
+  SparklesIcon,
   SearchIcon,
   SettingsIcon,
   ShieldIcon,
@@ -31,6 +32,7 @@ const navGroups = [
     items: [
       { label: "Dashboard", path: "/app/dashboard", icon: LayoutDashboardIcon },
       { label: "Analytics", path: "/app/analytics", icon: LineChartIcon },
+      { label: "Value Story", path: "/app/pitch-story", icon: SparklesIcon },
     ],
   },
   {
@@ -57,7 +59,7 @@ const Layout = () => {
   const location = useLocation();
   const { signOut, user } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const { workspace, userRole, consent } = useWorkspace();
+  const { workspace, userRole, consent, pitchMode, setPitchModeEnabled } = useWorkspace();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const handleLogout = () => {
@@ -87,6 +89,7 @@ const Layout = () => {
       "/app/emails": "Emails",
       "/app/templates": "Templates",
       "/app/analytics": "Analytics",
+      "/app/pitch-story": "Value Story",
       "/app/settings": "Settings",
       "/app/privacy": "Privacy Center",
       "/app/audit-logs": "Audit Logs",
@@ -168,6 +171,33 @@ const Layout = () => {
             >
               Open status page
             </button>
+            <div className="mt-4 rounded-xl border border-indigo-100 bg-indigo-50/70 p-3 text-[11px] dark:border-indigo-500/40 dark:bg-indigo-500/10">
+              <p className="font-semibold text-indigo-700 dark:text-indigo-200">Pitch mode</p>
+              <div className="mt-2 flex rounded-full border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-900">
+                <button
+                  type="button"
+                  onClick={() => setPitchModeEnabled(false)}
+                  className={`flex-1 rounded-full px-2 py-1 text-[11px] font-semibold transition ${
+                    pitchMode
+                      ? "text-slate-500 dark:text-slate-400"
+                      : "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
+                  }`}
+                >
+                  Normal
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPitchModeEnabled(true)}
+                  className={`flex-1 rounded-full px-2 py-1 text-[11px] font-semibold transition ${
+                    pitchMode
+                      ? "bg-indigo-600 text-white"
+                      : "text-slate-500 dark:text-slate-400"
+                  }`}
+                >
+                  Pitch
+                </button>
+              </div>
+            </div>
           </div>
         </aside>
         <div className="flex min-h-screen flex-1 flex-col">
@@ -212,10 +242,39 @@ const Layout = () => {
                       ? "Manual override enabled"
                       : "Manual override restricted"}
                   </span>
+                  {pitchMode ? (
+                    <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-indigo-700 dark:border-indigo-500/40 dark:bg-indigo-500/10 dark:text-indigo-200">
+                      Pitch Mode active
+                    </span>
+                  ) : null}
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-4">
+              <div className="hidden lg:flex items-center rounded-full border border-slate-200 bg-white p-1 text-xs shadow-sm dark:border-slate-700 dark:bg-slate-900">
+                <button
+                  type="button"
+                  onClick={() => setPitchModeEnabled(false)}
+                  className={`rounded-full px-3 py-1.5 font-semibold transition ${
+                    pitchMode
+                      ? "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                      : "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
+                  }`}
+                >
+                  Normal Mode
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPitchModeEnabled(true)}
+                  className={`rounded-full px-3 py-1.5 font-semibold transition ${
+                    pitchMode
+                      ? "bg-indigo-600 text-white shadow-sm"
+                      : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                  }`}
+                >
+                  Pitch Mode
+                </button>
+              </div>
               <WorkspaceSwitcher className="hidden md:block" />
               <div className="relative hidden md:flex items-center">
                 <SearchIcon className="absolute left-3 h-4 w-4 text-slate-400 dark:text-slate-500" />
@@ -272,6 +331,32 @@ const Layout = () => {
                           }`}
                         >
                           View profile
+                        </button>
+                      )}
+                    </Menu.Item>
+                    <Menu.Item>
+                      {({ active }) => (
+                        <button
+                          type="button"
+                          onClick={() => navigate("/app/pitch-story")}
+                          className={`w-full rounded-lg px-3 py-2 text-left ${
+                            active ? "bg-slate-100 dark:bg-slate-800" : ""
+                          }`}
+                        >
+                          Value story
+                        </button>
+                      )}
+                    </Menu.Item>
+                    <Menu.Item>
+                      {({ active }) => (
+                        <button
+                          type="button"
+                          onClick={() => setPitchModeEnabled(!pitchMode)}
+                          className={`w-full rounded-lg px-3 py-2 text-left ${
+                            active ? "bg-slate-100 dark:bg-slate-800" : ""
+                          }`}
+                        >
+                          {pitchMode ? "Disable pitch mode" : "Enable pitch mode"}
                         </button>
                       )}
                     </Menu.Item>
@@ -347,6 +432,11 @@ const Layout = () => {
           </header>
           <main className="flex-1 px-4 py-6 md:px-8 lg:px-10">
             <div className="animate-fade-in">
+              {pitchMode ? (
+                <div className="mb-4 rounded-2xl border border-indigo-200 bg-indigo-50/80 px-4 py-3 text-xs text-indigo-800 dark:border-indigo-500/40 dark:bg-indigo-500/10 dark:text-indigo-200">
+                  <span className="font-semibold">Pitch Mode:</span> overlays now explain why each feature exists, the problem it solves, and the KPI it improves.
+                </div>
+              ) : null}
               <Outlet />
             </div>
           </main>

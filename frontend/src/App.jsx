@@ -13,6 +13,7 @@ import Leads from "./pages/Leads";
 import Login from "./pages/Login";
 import AuditLogs from "./pages/AuditLogs";
 import PrivacyCenter from "./pages/PrivacyCenter";
+import PitchStory from "./pages/PitchStory";
 import Register from "./pages/Register";
 import Settings from "./pages/Settings";
 import SystemStatus from "./pages/SystemStatus";
@@ -49,6 +50,7 @@ const App = () => {
         <Route path="settings" element={<Settings />} />
         <Route path="privacy" element={<PrivacyCenter />} />
         <Route path="audit-logs" element={<AuditLogs />} />
+        <Route path="pitch-story" element={<PitchStory />} />
         <Route path="status" element={<SystemStatus />} />
       </Route>
 
@@ -61,6 +63,7 @@ const App = () => {
       <Route path="/templates" element={<Navigate to="/app/templates" replace />} />
       <Route path="/privacy" element={<Navigate to="/app/privacy" replace />} />
       <Route path="/audit-logs" element={<Navigate to="/app/audit-logs" replace />} />
+      <Route path="/pitch-story" element={<Navigate to="/app/pitch-story" replace />} />
       <Route path="/status" element={<Navigate to="/app/status" replace />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

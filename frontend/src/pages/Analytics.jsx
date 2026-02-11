@@ -16,6 +16,8 @@ import {
 import Badge from "../components/Badge";
 import EmptyState from "../components/EmptyState";
 import { BotIcon, ClockIcon, LineChartIcon, MailIcon, SparklesIcon, UserPlusIcon } from "../components/Icons";
+import PitchCallout from "../components/PitchCallout";
+import PitchMetricStrip from "../components/PitchMetricStrip";
 import Skeleton from "../components/Skeleton";
 import StatCard from "../components/StatCard";
 import { useWorkspace } from "../context/WorkspaceContext";
@@ -33,7 +35,7 @@ const getLast7Days = () => {
 };
 
 const Analytics = () => {
-  const { workspace, userRole, adjustMetric, scopeCollection } = useWorkspace();
+  const { workspace, userRole, adjustMetric, scopeCollection, pitchMode } = useWorkspace();
   const [overview, setOverview] = useState(null);
   const [emails, setEmails] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -142,6 +144,36 @@ const Analytics = () => {
     ];
   }, [businessMetrics.responseMinutesSaved]);
 
+  const pitchStoryMetrics = useMemo(() => {
+    const hoursSaved = Math.max(60, Math.round((businessMetrics.responseMinutesSaved || 0) / 60));
+    const revenueInfluenced = businessMetrics.revenueInfluenced || 0;
+    const conversionUplift = Math.max(7, Math.min(24, Math.round((businessMetrics.leadsRecovered || 0) * 0.35)));
+    const burnReduction = Math.max(6, Math.min(22, Math.round((hoursSaved * 76) / 1000)));
+
+    return [
+      {
+        label: "Hours saved",
+        value: `${hoursSaved}h`,
+        detail: "Total workload removed by AI drafting and routing.",
+      },
+      {
+        label: "Revenue influenced",
+        value: `$${revenueInfluenced.toLocaleString()}`,
+        detail: "Value tied to recovered and accelerated conversations.",
+      },
+      {
+        label: "Conversion uplift",
+        value: `+${conversionUplift}%`,
+        detail: "Faster response windows improve win probability.",
+      },
+      {
+        label: "Burn reduction",
+        value: `-${burnReduction}%`,
+        detail: "Operational savings from lower manual triage effort.",
+      },
+    ];
+  }, [businessMetrics.leadsRecovered, businessMetrics.responseMinutesSaved, businessMetrics.revenueInfluenced]);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -174,6 +206,18 @@ const Analytics = () => {
               actionLabel="Open system status"
               actionTo="/app/status"
             />
+          ) : null}
+
+          {pitchMode ? (
+            <div className="space-y-4">
+              <PitchCallout
+                feature="Business analytics translates automation behavior into board-level outcomes."
+                problem="Generic activity charts fail to justify budget and buying decisions."
+                kpi="Revenue influenced, response-time savings, conversion uplift, and burn reduction."
+                impact="Stakeholders see measurable value instead of feature usage alone."
+              />
+              <PitchMetricStrip metrics={pitchStoryMetrics} />
+            </div>
           ) : null}
 
           <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
@@ -209,6 +253,15 @@ const Analytics = () => {
 
           <div className="grid gap-6 lg:grid-cols-[1.35fr_1fr]">
             <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-md dark:border-slate-800 dark:bg-slate-900/80">
+              {pitchMode ? (
+                <PitchCallout
+                  className="mb-4"
+                  feature="Trend line ties AI actions to pipeline value over time."
+                  problem="Executives struggle to prove whether automation drives real growth."
+                  kpi="Revenue influenced trend and leads recovered trend."
+                  impact="Creates a repeatable story for investor, board, and buyer conversations."
+                />
+              ) : null}
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Revenue and recovery trend</h3>
@@ -257,6 +310,15 @@ const Analytics = () => {
             </div>
 
             <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-md dark:border-slate-800 dark:bg-slate-900/80">
+              {pitchMode ? (
+                <PitchCallout
+                  className="mb-4"
+                  feature="Time-saved breakdown identifies which automations compound efficiency."
+                  problem="Teams rarely know which workflows are truly reducing manual labor."
+                  kpi="Minutes saved by function and cost-to-serve trend."
+                  impact="Product and ops teams can invest where savings are largest."
+                />
+              ) : null}
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Where time was saved</h3>

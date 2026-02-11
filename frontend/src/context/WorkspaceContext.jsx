@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from "
 
 const workspaceStorageKey = "automation-workspace-id";
 const consentStoragePrefix = "automation-consent";
+const pitchModeStoragePrefix = "automation-pitch-mode";
 
 const defaultConsent = {
   aiAssistanceEnabled: true,
@@ -107,9 +108,17 @@ const readConsent = (workspaceId) => {
   }
 };
 
+const readPitchMode = (workspaceId) => {
+  if (typeof window === "undefined") {
+    return false;
+  }
+  return localStorage.getItem(`${pitchModeStoragePrefix}-${workspaceId}`) === "1";
+};
+
 export const WorkspaceProvider = ({ children }) => {
   const [workspaceId, setWorkspaceId] = useState(resolveInitialWorkspaceId);
   const [consent, setConsent] = useState(() => readConsent(resolveInitialWorkspaceId()));
+  const [pitchMode, setPitchMode] = useState(() => readPitchMode(resolveInitialWorkspaceId()));
 
   const workspace =
     workspaceCatalog.find((item) => item.id === workspaceId) || workspaceCatalog[0];
@@ -131,6 +140,10 @@ export const WorkspaceProvider = ({ children }) => {
   }, [workspaceId]);
 
   useEffect(() => {
+    setPitchMode(readPitchMode(workspaceId));
+  }, [workspaceId]);
+
+  useEffect(() => {
     if (typeof window === "undefined") {
       return;
     }
@@ -138,8 +151,20 @@ export const WorkspaceProvider = ({ children }) => {
     window.dispatchEvent(new Event("assistant-consent-updated"));
   }, [consent, workspaceId]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    localStorage.setItem(`${pitchModeStoragePrefix}-${workspaceId}`, pitchMode ? "1" : "0");
+    window.dispatchEvent(new Event("assistant-pitch-mode-updated"));
+  }, [pitchMode, workspaceId]);
+
   const updateConsent = (key, value) => {
     setConsent((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const setPitchModeEnabled = (enabled) => {
+    setPitchMode(Boolean(enabled));
   };
 
   const can = (permission) => {
@@ -190,8 +215,10 @@ export const WorkspaceProvider = ({ children }) => {
       scopeCollection,
       consent,
       updateConsent,
+      pitchMode,
+      setPitchModeEnabled,
     }),
-    [consent, workspace, workspaceId]
+    [consent, pitchMode, workspace, workspaceId]
   );
 
   return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;
