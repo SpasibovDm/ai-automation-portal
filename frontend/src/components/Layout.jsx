@@ -18,6 +18,7 @@ import {
   SettingsIcon,
   ShieldIcon,
   SunIcon,
+  ToggleLeftIcon,
   UsersIcon,
 } from "./Icons";
 import { ToastProvider } from "./ToastContext";
@@ -32,6 +33,7 @@ const navGroups = [
     items: [
       { label: "Dashboard", path: "/app/dashboard", icon: LayoutDashboardIcon },
       { label: "Analytics", path: "/app/analytics", icon: LineChartIcon },
+      { label: "Workflow Builder", path: "/app/workflows", icon: ToggleLeftIcon },
       { label: "Value Story", path: "/app/pitch-story", icon: SparklesIcon },
     ],
   },
@@ -59,7 +61,16 @@ const Layout = () => {
   const location = useLocation();
   const { signOut, user } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const { workspace, userRole, consent, pitchMode, setPitchModeEnabled } = useWorkspace();
+  const {
+    workspace,
+    userRole,
+    consent,
+    pitchMode,
+    setPitchModeEnabled,
+    enterpriseMode,
+    setEnterpriseModeEnabled,
+    roleProfile,
+  } = useWorkspace();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const handleLogout = () => {
@@ -89,6 +100,7 @@ const Layout = () => {
       "/app/emails": "Emails",
       "/app/templates": "Templates",
       "/app/analytics": "Analytics",
+      "/app/workflows": "Workflow Builder",
       "/app/pitch-story": "Value Story",
       "/app/settings": "Settings",
       "/app/privacy": "Privacy Center",
@@ -103,7 +115,7 @@ const Layout = () => {
       <div
         className={`min-h-screen bg-[var(--bg-app)] text-slate-900 dark:text-slate-100 flex app-shell ${
           theme === "dark" ? "dark-shell" : ""
-        }`}
+        } ${enterpriseMode ? "enterprise-mode" : ""}`}
       >
         <div
           className={`fixed inset-0 z-40 bg-slate-900/50 transition-opacity md:hidden ${
@@ -113,9 +125,9 @@ const Layout = () => {
           role="presentation"
         />
         <aside
-          className={`fixed inset-y-0 left-0 z-50 w-72 transform border-r border-slate-200 bg-white/90 p-6 backdrop-blur transition-transform duration-300 dark:border-slate-800 dark:bg-slate-950/80 md:static md:translate-x-0 ${
+          className={`fixed inset-y-0 left-0 z-50 w-72 transform border-r border-slate-200 bg-white/90 backdrop-blur transition-transform duration-300 dark:border-slate-800 dark:bg-slate-950/80 md:static md:translate-x-0 ${
             isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-          }`}
+          } ${enterpriseMode ? "p-4" : "p-6"}`}
         >
           <div className="flex items-center gap-3 text-lg font-semibold text-slate-900 dark:text-white">
             <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-500/30">
@@ -128,7 +140,7 @@ const Layout = () => {
               <p className="text-base font-semibold">{workspace.name}</p>
             </div>
           </div>
-          <nav className="mt-10 space-y-6 text-sm">
+          <nav className={`${enterpriseMode ? "mt-6" : "mt-10"} space-y-6 text-sm`}>
             {navGroups.map((group) => (
               <div key={group.title} className="space-y-2">
                 <p className="text-xs uppercase tracking-[0.28em] text-slate-400 dark:text-slate-500">
@@ -159,7 +171,7 @@ const Layout = () => {
               </div>
             ))}
           </nav>
-          <div className="mt-8 rounded-2xl border border-slate-200 bg-white/70 p-4 text-xs text-slate-500 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-300">
+          <div className={`${enterpriseMode ? "mt-5" : "mt-8"} rounded-2xl border border-slate-200 bg-white/70 p-4 text-xs text-slate-500 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-300`}>
             <p className="font-semibold text-slate-700 dark:text-slate-100">
               Workspace status
             </p>
@@ -171,6 +183,33 @@ const Layout = () => {
             >
               Open status page
             </button>
+            <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50/80 p-3 text-[11px] dark:border-slate-700 dark:bg-slate-900/70">
+              <p className="font-semibold text-slate-700 dark:text-slate-200">Enterprise mode</p>
+              <div className="mt-2 flex rounded-full border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-900">
+                <button
+                  type="button"
+                  onClick={() => setEnterpriseModeEnabled(false)}
+                  className={`flex-1 rounded-full px-2 py-1 text-[11px] font-semibold transition ${
+                    enterpriseMode
+                      ? "text-slate-500 dark:text-slate-400"
+                      : "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
+                  }`}
+                >
+                  Standard
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEnterpriseModeEnabled(true)}
+                  className={`flex-1 rounded-full px-2 py-1 text-[11px] font-semibold transition ${
+                    enterpriseMode
+                      ? "bg-slate-700 text-white dark:bg-slate-200 dark:text-slate-900"
+                      : "text-slate-500 dark:text-slate-400"
+                  }`}
+                >
+                  Enterprise
+                </button>
+              </div>
+            </div>
             <div className="mt-4 rounded-xl border border-indigo-100 bg-indigo-50/70 p-3 text-[11px] dark:border-indigo-500/40 dark:bg-indigo-500/10">
               <p className="font-semibold text-indigo-700 dark:text-indigo-200">Pitch mode</p>
               <div className="mt-2 flex rounded-full border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-900">
@@ -201,7 +240,9 @@ const Layout = () => {
           </div>
         </aside>
         <div className="flex min-h-screen flex-1 flex-col">
-          <header className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200 bg-white/80 px-4 py-4 backdrop-blur dark:border-slate-800 dark:bg-slate-950/80 md:px-8">
+          <header className={`sticky top-0 z-30 flex items-center justify-between border-b border-slate-200 bg-white/80 px-4 backdrop-blur dark:border-slate-800 dark:bg-slate-950/80 md:px-8 ${
+            enterpriseMode ? "py-2.5" : "py-4"
+          }`}>
             <div className="flex items-center gap-3">
               <button
                 type="button"
@@ -222,6 +263,9 @@ const Layout = () => {
                   <span>Revenue automation workspace</span>
                   <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
                     {userRole}
+                  </span>
+                  <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                    {roleProfile.scope}
                   </span>
                 </div>
                 <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
@@ -247,10 +291,39 @@ const Layout = () => {
                       Pitch Mode active
                     </span>
                   ) : null}
+                  {enterpriseMode ? (
+                    <span className="rounded-full border border-slate-300 bg-slate-100 px-2 py-0.5 text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200">
+                      Enterprise Mode active
+                    </span>
+                  ) : null}
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-4">
+              <div className="hidden lg:flex items-center rounded-full border border-slate-200 bg-white p-1 text-xs shadow-sm dark:border-slate-700 dark:bg-slate-900">
+                <button
+                  type="button"
+                  onClick={() => setEnterpriseModeEnabled(false)}
+                  className={`rounded-full px-3 py-1.5 font-semibold transition ${
+                    enterpriseMode
+                      ? "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                      : "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
+                  }`}
+                >
+                  Standard UI
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEnterpriseModeEnabled(true)}
+                  className={`rounded-full px-3 py-1.5 font-semibold transition ${
+                    enterpriseMode
+                      ? "bg-slate-700 text-white shadow-sm dark:bg-slate-200 dark:text-slate-900"
+                      : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                  }`}
+                >
+                  Enterprise UI
+                </button>
+              </div>
               <div className="hidden lg:flex items-center rounded-full border border-slate-200 bg-white p-1 text-xs shadow-sm dark:border-slate-700 dark:bg-slate-900">
                 <button
                   type="button"
@@ -338,12 +411,38 @@ const Layout = () => {
                       {({ active }) => (
                         <button
                           type="button"
+                          onClick={() => navigate("/app/workflows")}
+                          className={`w-full rounded-lg px-3 py-2 text-left ${
+                            active ? "bg-slate-100 dark:bg-slate-800" : ""
+                          }`}
+                        >
+                          Workflow builder
+                        </button>
+                      )}
+                    </Menu.Item>
+                    <Menu.Item>
+                      {({ active }) => (
+                        <button
+                          type="button"
                           onClick={() => navigate("/app/pitch-story")}
                           className={`w-full rounded-lg px-3 py-2 text-left ${
                             active ? "bg-slate-100 dark:bg-slate-800" : ""
                           }`}
                         >
                           Value story
+                        </button>
+                      )}
+                    </Menu.Item>
+                    <Menu.Item>
+                      {({ active }) => (
+                        <button
+                          type="button"
+                          onClick={() => setEnterpriseModeEnabled(!enterpriseMode)}
+                          className={`w-full rounded-lg px-3 py-2 text-left ${
+                            active ? "bg-slate-100 dark:bg-slate-800" : ""
+                          }`}
+                        >
+                          {enterpriseMode ? "Disable enterprise mode" : "Enable enterprise mode"}
                         </button>
                       )}
                     </Menu.Item>
@@ -430,11 +529,16 @@ const Layout = () => {
               </Menu>
             </div>
           </header>
-          <main className="flex-1 px-4 py-6 md:px-8 lg:px-10">
+          <main className={`flex-1 ${enterpriseMode ? "px-3 py-4 md:px-6 lg:px-8" : "px-4 py-6 md:px-8 lg:px-10"}`}>
             <div className="animate-fade-in">
               {pitchMode ? (
                 <div className="mb-4 rounded-2xl border border-indigo-200 bg-indigo-50/80 px-4 py-3 text-xs text-indigo-800 dark:border-indigo-500/40 dark:bg-indigo-500/10 dark:text-indigo-200">
                   <span className="font-semibold">Pitch Mode:</span> overlays now explain why each feature exists, the problem it solves, and the KPI it improves.
+                </div>
+              ) : null}
+              {enterpriseMode ? (
+                <div className="mb-4 rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-300">
+                  <span className="font-semibold">Enterprise Mode:</span> compact density, reduced motion, and operational layouts optimized for large teams.
                 </div>
               ) : null}
               <Outlet />

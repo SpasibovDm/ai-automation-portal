@@ -3,6 +3,7 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from "
 const workspaceStorageKey = "automation-workspace-id";
 const consentStoragePrefix = "automation-consent";
 const pitchModeStoragePrefix = "automation-pitch-mode";
+const enterpriseModeStoragePrefix = "automation-enterprise-mode";
 
 const defaultConsent = {
   aiAssistanceEnabled: true,
@@ -75,6 +76,25 @@ const permissionHints = {
   view_system_status: "Status visibility is available to every role.",
 };
 
+const roleProfiles = {
+  Owner: {
+    scope: "Full access",
+    description: "Can manage settings, assignments, workflows, and all governance controls.",
+  },
+  Admin: {
+    scope: "Administrative",
+    description: "Can manage operations and settings, with broad control over workspace workflows.",
+  },
+  Agent: {
+    scope: "Operational",
+    description: "Can execute day-to-day lead and reply actions, without workspace governance changes.",
+  },
+  Viewer: {
+    scope: "Read-only",
+    description: "Can review activity and analytics, with no write actions.",
+  },
+};
+
 const WorkspaceContext = createContext(null);
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
@@ -115,10 +135,20 @@ const readPitchMode = (workspaceId) => {
   return localStorage.getItem(`${pitchModeStoragePrefix}-${workspaceId}`) === "1";
 };
 
+const readEnterpriseMode = (workspaceId) => {
+  if (typeof window === "undefined") {
+    return false;
+  }
+  return localStorage.getItem(`${enterpriseModeStoragePrefix}-${workspaceId}`) === "1";
+};
+
 export const WorkspaceProvider = ({ children }) => {
   const [workspaceId, setWorkspaceId] = useState(resolveInitialWorkspaceId);
   const [consent, setConsent] = useState(() => readConsent(resolveInitialWorkspaceId()));
   const [pitchMode, setPitchMode] = useState(() => readPitchMode(resolveInitialWorkspaceId()));
+  const [enterpriseMode, setEnterpriseMode] = useState(() =>
+    readEnterpriseMode(resolveInitialWorkspaceId())
+  );
 
   const workspace =
     workspaceCatalog.find((item) => item.id === workspaceId) || workspaceCatalog[0];
@@ -144,6 +174,10 @@ export const WorkspaceProvider = ({ children }) => {
   }, [workspaceId]);
 
   useEffect(() => {
+    setEnterpriseMode(readEnterpriseMode(workspaceId));
+  }, [workspaceId]);
+
+  useEffect(() => {
     if (typeof window === "undefined") {
       return;
     }
@@ -159,6 +193,17 @@ export const WorkspaceProvider = ({ children }) => {
     window.dispatchEvent(new Event("assistant-pitch-mode-updated"));
   }, [pitchMode, workspaceId]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    localStorage.setItem(
+      `${enterpriseModeStoragePrefix}-${workspaceId}`,
+      enterpriseMode ? "1" : "0"
+    );
+    window.dispatchEvent(new Event("assistant-enterprise-mode-updated"));
+  }, [enterpriseMode, workspaceId]);
+
   const updateConsent = (key, value) => {
     setConsent((prev) => ({ ...prev, [key]: value }));
   };
@@ -166,6 +211,12 @@ export const WorkspaceProvider = ({ children }) => {
   const setPitchModeEnabled = (enabled) => {
     setPitchMode(Boolean(enabled));
   };
+
+  const setEnterpriseModeEnabled = (enabled) => {
+    setEnterpriseMode(Boolean(enabled));
+  };
+
+  const roleProfile = roleProfiles[workspace.userRole] || roleProfiles.Viewer;
 
   const can = (permission) => {
     const rolePermissions = permissionMatrix[workspace.userRole] || [];
@@ -217,8 +268,11 @@ export const WorkspaceProvider = ({ children }) => {
       updateConsent,
       pitchMode,
       setPitchModeEnabled,
+      enterpriseMode,
+      setEnterpriseModeEnabled,
+      roleProfile,
     }),
-    [consent, pitchMode, workspace, workspaceId]
+    [consent, enterpriseMode, pitchMode, roleProfile, workspace, workspaceId]
   );
 
   return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;

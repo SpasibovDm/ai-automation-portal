@@ -14,6 +14,13 @@ import { getLeadEmails, getLeads, getTemplates, updateLeadStatus } from "../serv
 import { buildAIExplanation } from "../utils/aiExplainability";
 
 const statusOptions = ["new", "contacted", "qualified", "closed"];
+const assignmentOptions = [
+  "Unassigned",
+  "Revenue Ops",
+  "Enterprise AEs",
+  "Regional Team",
+  "Support Desk",
+];
 const dateOptions = [
   { value: "all", label: "All time" },
   { value: "7", label: "Last 7 days" },
@@ -22,7 +29,15 @@ const dateOptions = [
 ];
 
 const Leads = () => {
-  const { workspace, userRole, can, getPermissionHint, scopeCollection } = useWorkspace();
+  const {
+    workspace,
+    userRole,
+    can,
+    getPermissionHint,
+    scopeCollection,
+    enterpriseMode,
+    roleProfile,
+  } = useWorkspace();
   const [leads, setLeads] = useState([]);
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -37,7 +52,15 @@ const Leads = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerEmails, setDrawerEmails] = useState([]);
   const [drawerEmailsLoading, setDrawerEmailsLoading] = useState(false);
+  const [selectedLeadIds, setSelectedLeadIds] = useState([]);
+  const [bulkStatus, setBulkStatus] = useState("contacted");
+  const [bulkAssignee, setBulkAssignee] = useState("Revenue Ops");
+  const [leadAssignments, setLeadAssignments] = useState({});
   const { addToast } = useToast();
+
+  const canStatusManage = can("update_lead_status");
+  const canBulkAssign = userRole === "Owner" || userRole === "Admin";
+  const isReadOnly = userRole === "Viewer";
 
   const emptyState = useMemo(
     () => ({
@@ -51,7 +74,18 @@ const Leads = () => {
   const loadLeads = async () => {
     try {
       const data = await getLeads();
-      setLeads(scopeCollection(data, { min: 1 }));
+      const scoped = scopeCollection(data, { min: 1 });
+      setLeads(scoped);
+      setLeadAssignments((prev) => {
+        const next = { ...prev };
+        scoped.forEach((lead, index) => {
+          if (!next[lead.id]) {
+            next[lead.id] = assignmentOptions[(index + 1) % assignmentOptions.length];
+          }
+        });
+        return next;
+      });
+      setSelectedLeadIds([]);
     } catch (err) {
       setError("Unable to load leads.");
     } finally {
@@ -78,7 +112,7 @@ const Leads = () => {
   }, [scopeCollection, workspace.id]);
 
   const handleStatusChange = async (leadId, status) => {
-    if (!can("update_lead_status")) {
+    if (!canStatusManage) {
       return;
     }
     try {
@@ -97,6 +131,62 @@ const Leads = () => {
         variant: "error",
       });
     }
+  };
+
+  const handleBulkStatusChange = async () => {
+    if (!selectedLeadIds.length || !canStatusManage) {
+      return;
+    }
+    const pendingIds = [...selectedLeadIds];
+    const updates = await Promise.all(
+      pendingIds.map(async (leadId) => {
+        try {
+          const updated = await updateLeadStatus(leadId, bulkStatus);
+          return updated;
+        } catch (err) {
+          return null;
+        }
+      })
+    );
+
+    const successful = updates.filter(Boolean);
+    if (!successful.length) {
+      addToast({
+        title: "Bulk status failed",
+        description: "No selected leads were updated.",
+        variant: "error",
+      });
+      return;
+    }
+
+    const updatesById = new Map(successful.map((item) => [item.id, item]));
+    setLeads((prev) => prev.map((lead) => updatesById.get(lead.id) || lead));
+    setSelectedLead((prev) => (prev && updatesById.get(prev.id) ? updatesById.get(prev.id) : prev));
+    if (selectedLead && updatesById.get(selectedLead.id)) {
+      setDrawerStatus(updatesById.get(selectedLead.id).status);
+    }
+
+    addToast({
+      title: "Bulk status updated",
+      description: `${successful.length} leads moved to ${bulkStatus}.`,
+    });
+  };
+
+  const handleBulkAssign = () => {
+    if (!selectedLeadIds.length || !canBulkAssign) {
+      return;
+    }
+    setLeadAssignments((prev) => {
+      const next = { ...prev };
+      selectedLeadIds.forEach((leadId) => {
+        next[leadId] = bulkAssignee;
+      });
+      return next;
+    });
+    addToast({
+      title: "Bulk assignment applied",
+      description: `${selectedLeadIds.length} leads assigned to ${bulkAssignee}.`,
+    });
   };
 
   const handleViewLead = (lead) => {
@@ -144,17 +234,56 @@ const Leads = () => {
     return matched?.name || templates[0]?.name || "Default template";
   };
 
-  const filteredLeads = leads.filter((lead) => {
-    const matchesStatus = statusFilter === "all" || lead.status === statusFilter;
-    const search = query.toLowerCase();
-    const matchesQuery =
-      !search || lead.name.toLowerCase().includes(search) || lead.email.toLowerCase().includes(search);
-    const matchesSource = sourceFilter === "all" || lead.source === sourceFilter;
-    const matchesDate =
-      dateFilter === "all" ||
-      new Date(lead.created_at) >= new Date(Date.now() - Number(dateFilter) * 24 * 60 * 60 * 1000);
-    return matchesStatus && matchesQuery && matchesSource && matchesDate;
-  });
+  const filteredLeads = useMemo(
+    () =>
+      leads.filter((lead) => {
+        const matchesStatus = statusFilter === "all" || lead.status === statusFilter;
+        const search = query.toLowerCase();
+        const matchesQuery =
+          !search || lead.name.toLowerCase().includes(search) || lead.email.toLowerCase().includes(search);
+        const matchesSource = sourceFilter === "all" || lead.source === sourceFilter;
+        const matchesDate =
+          dateFilter === "all" ||
+          new Date(lead.created_at) >= new Date(Date.now() - Number(dateFilter) * 24 * 60 * 60 * 1000);
+        return matchesStatus && matchesQuery && matchesSource && matchesDate;
+      }),
+    [dateFilter, leads, query, sourceFilter, statusFilter]
+  );
+
+  const visibleLeadIds = useMemo(() => filteredLeads.map((lead) => lead.id), [filteredLeads]);
+  const selectedVisibleIds = useMemo(
+    () => selectedLeadIds.filter((leadId) => visibleLeadIds.includes(leadId)),
+    [selectedLeadIds, visibleLeadIds]
+  );
+  const allVisibleSelected = visibleLeadIds.length > 0 && selectedVisibleIds.length === visibleLeadIds.length;
+  const hasSelection = selectedLeadIds.length > 0;
+
+  const roleGuidance = useMemo(() => {
+    const profiles = {
+      Owner:
+        "Owner mode: full control over bulk status updates, assignment, and operational workflow governance.",
+      Admin:
+        "Admin mode: operational control with bulk actions and assignment for team execution.",
+      Agent:
+        "Agent mode: can update lead statuses but assignment and governance controls are restricted.",
+      Viewer: "Viewer mode: read-only lead visibility for audit and reporting use cases.",
+    };
+    return profiles[userRole] || profiles.Viewer;
+  }, [userRole]);
+
+  const toggleLeadSelection = (leadId) => {
+    setSelectedLeadIds((prev) =>
+      prev.includes(leadId) ? prev.filter((id) => id !== leadId) : [...prev, leadId]
+    );
+  };
+
+  const toggleSelectAllVisible = () => {
+    if (allVisibleSelected) {
+      setSelectedLeadIds((prev) => prev.filter((id) => !visibleLeadIds.includes(id)));
+      return;
+    }
+    setSelectedLeadIds((prev) => Array.from(new Set([...prev, ...visibleLeadIds])));
+  };
 
   useEffect(() => {
     if (!selectedLead) {
@@ -191,8 +320,13 @@ const Leads = () => {
     [selectedLead]
   );
 
+  const headCellClass = enterpriseMode
+    ? "text-left px-4 py-2 font-medium"
+    : "text-left px-6 py-3 font-medium";
+  const bodyCellClass = enterpriseMode ? "px-4 py-2.5" : "px-6 py-4";
+
   return (
-    <div className="space-y-6">
+    <div className={enterpriseMode ? "space-y-4" : "space-y-6"}>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">Leads</h2>
@@ -203,7 +337,12 @@ const Leads = () => {
         <div className="flex items-center gap-2">
           <Badge variant="default">{workspace.name}</Badge>
           <Badge variant="info">Role: {userRole}</Badge>
+          <Badge variant={isReadOnly ? "warning" : "success"}>{roleProfile.scope}</Badge>
+          {enterpriseMode ? <Badge variant="default">Enterprise density</Badge> : null}
         </div>
+      </div>
+
+      <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
         <div className="flex flex-wrap gap-3">
           <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
             <SearchIcon className="h-4 w-4 text-slate-400 dark:text-slate-500" />
@@ -212,13 +351,15 @@ const Leads = () => {
               placeholder="Search leads"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              className="w-44 bg-transparent text-sm text-slate-600 focus:outline-none dark:text-slate-200"
+              className={`${enterpriseMode ? "w-36 text-xs" : "w-44 text-sm"} bg-transparent text-slate-600 focus:outline-none dark:text-slate-200`}
             />
           </div>
           <select
             value={statusFilter}
             onChange={(event) => setStatusFilter(event.target.value)}
-            className="rounded-full border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+            className={`rounded-full border border-slate-200 bg-white ${
+              enterpriseMode ? "px-2.5 py-1.5 text-xs" : "px-3 py-2 text-sm"
+            } text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200`}
           >
             <option value="all">All statuses</option>
             {statusOptions.map((option) => (
@@ -230,7 +371,9 @@ const Leads = () => {
           <select
             value={dateFilter}
             onChange={(event) => setDateFilter(event.target.value)}
-            className="rounded-full border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+            className={`rounded-full border border-slate-200 bg-white ${
+              enterpriseMode ? "px-2.5 py-1.5 text-xs" : "px-3 py-2 text-sm"
+            } text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200`}
           >
             {dateOptions.map((option) => (
               <option key={option.value} value={option.value}>
@@ -241,7 +384,9 @@ const Leads = () => {
           <select
             value={sourceFilter}
             onChange={(event) => setSourceFilter(event.target.value)}
-            className="rounded-full border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+            className={`rounded-full border border-slate-200 bg-white ${
+              enterpriseMode ? "px-2.5 py-1.5 text-xs" : "px-3 py-2 text-sm"
+            } text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200`}
           >
             <option value="all">All sources</option>
             {sourceOptions.map((option) => (
@@ -251,7 +396,78 @@ const Leads = () => {
             ))}
           </select>
         </div>
+        <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">{roleGuidance}</p>
       </div>
+
+      <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Badge variant={hasSelection ? "info" : "default"}>
+              {hasSelection ? `${selectedLeadIds.length} selected` : "No selection"}
+            </Badge>
+            {hasSelection ? (
+              <button
+                type="button"
+                onClick={() => setSelectedLeadIds([])}
+                className="text-xs text-slate-500 underline underline-offset-2 dark:text-slate-400"
+              >
+                Clear
+              </button>
+            ) : null}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={bulkStatus}
+              onChange={(event) => setBulkStatus(event.target.value)}
+              disabled={!canStatusManage}
+              className={`rounded-lg border border-slate-200 bg-white ${
+                enterpriseMode ? "px-2 py-1.5 text-xs" : "px-3 py-2 text-sm"
+              } text-slate-600 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200`}
+              title={!canStatusManage ? getPermissionHint("update_lead_status") : undefined}
+            >
+              {statusOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+            <Button
+              variant="secondary"
+              className={enterpriseMode ? "px-3 py-1.5 text-xs" : ""}
+              onClick={handleBulkStatusChange}
+              disabled={!hasSelection || !canStatusManage}
+              title={!canStatusManage ? getPermissionHint("update_lead_status") : undefined}
+            >
+              Bulk status
+            </Button>
+            <select
+              value={bulkAssignee}
+              onChange={(event) => setBulkAssignee(event.target.value)}
+              disabled={!canBulkAssign}
+              className={`rounded-lg border border-slate-200 bg-white ${
+                enterpriseMode ? "px-2 py-1.5 text-xs" : "px-3 py-2 text-sm"
+              } text-slate-600 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200`}
+              title={!canBulkAssign ? "Only Owner/Admin can assign leads in bulk." : undefined}
+            >
+              {assignmentOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+            <Button
+              variant="subtle"
+              className={enterpriseMode ? "px-3 py-1.5 text-xs" : ""}
+              onClick={handleBulkAssign}
+              disabled={!hasSelection || !canBulkAssign}
+              title={!canBulkAssign ? "Only Owner/Admin can assign leads in bulk." : undefined}
+            >
+              Bulk assign
+            </Button>
+          </div>
+        </div>
+      </div>
+
       <div className="rounded-2xl border border-slate-100 bg-white shadow-md overflow-hidden dark:border-slate-800 dark:bg-slate-900/80">
         {loading ? (
           <div className="space-y-3 p-6">
@@ -265,11 +481,21 @@ const Leads = () => {
           <table className="min-w-full text-sm">
             <thead className="bg-slate-50 text-slate-500 dark:bg-slate-800/60 dark:text-slate-400">
               <tr>
-                <th className="text-left px-6 py-3 font-medium">Lead</th>
-                <th className="text-left px-6 py-3 font-medium">Status</th>
-                <th className="text-left px-6 py-3 font-medium">Source</th>
-                <th className="text-left px-6 py-3 font-medium">Last contact</th>
-                <th className="text-left px-6 py-3 font-medium">AI template</th>
+                <th className={headCellClass}>
+                  <input
+                    type="checkbox"
+                    checked={allVisibleSelected}
+                    onChange={toggleSelectAllVisible}
+                    aria-label="Select all visible leads"
+                    className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500/40"
+                  />
+                </th>
+                <th className={headCellClass}>Lead</th>
+                <th className={headCellClass}>Status</th>
+                <th className={headCellClass}>Source</th>
+                <th className={headCellClass}>Last contact</th>
+                <th className={headCellClass}>AI template</th>
+                <th className={headCellClass}>Owner</th>
               </tr>
             </thead>
             <tbody>
@@ -277,31 +503,35 @@ const Leads = () => {
                 filteredLeads.map((lead) => (
                   <tr
                     key={lead.id}
-                    className="border-t border-slate-100 transition hover:bg-slate-50 cursor-pointer dark:border-slate-800 dark:hover:bg-slate-800/60"
+                    className={`border-t border-slate-100 transition hover:bg-slate-50 cursor-pointer dark:border-slate-800 dark:hover:bg-slate-800/60 ${
+                      selectedLeadIds.includes(lead.id) ? "bg-indigo-50/70 dark:bg-indigo-500/10" : ""
+                    }`}
                     onClick={() => handleViewLead(lead)}
                   >
-                    <td className="px-6 py-4">
+                    <td className={bodyCellClass}>
+                      <input
+                        type="checkbox"
+                        checked={selectedLeadIds.includes(lead.id)}
+                        onChange={() => toggleLeadSelection(lead.id)}
+                        onClick={(event) => event.stopPropagation()}
+                        aria-label={`Select ${lead.name}`}
+                        className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500/40"
+                      />
+                    </td>
+                    <td className={bodyCellClass}>
                       <div className="space-y-1">
-                        <p className="font-medium text-slate-900 dark:text-white">
-                          {lead.name}
-                        </p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          {lead.email}
-                        </p>
+                        <p className="font-medium text-slate-900 dark:text-white">{lead.name}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{lead.email}</p>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className={bodyCellClass}>
                       <div className="flex items-center gap-2">
                         <StatusBadge status={lead.status} />
                         <select
-                          className="rounded-lg border border-slate-200 px-3 py-1 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                          className="rounded-lg border border-slate-200 px-2.5 py-1 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                           value={lead.status}
-                          disabled={!can("update_lead_status")}
-                          title={
-                            !can("update_lead_status")
-                              ? getPermissionHint("update_lead_status")
-                              : undefined
-                          }
+                          disabled={!canStatusManage}
+                          title={!canStatusManage ? getPermissionHint("update_lead_status") : undefined}
                           onChange={(event) => handleStatusChange(lead.id, event.target.value)}
                           onClick={(event) => event.stopPropagation()}
                         >
@@ -313,22 +543,43 @@ const Leads = () => {
                         </select>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
+                    <td className={`${bodyCellClass} text-slate-600 dark:text-slate-300`}>
                       <Badge variant="default">{lead.source || "Website"}</Badge>
                     </td>
-                    <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
+                    <td className={`${bodyCellClass} text-slate-600 dark:text-slate-300`}>
                       {formatLastContact(lead)}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className={bodyCellClass}>
                       <Badge variant={templatesLoading ? "warning" : "info"}>
                         {templatesLoading ? "Syncing..." : assignedTemplate(lead)}
                       </Badge>
+                    </td>
+                    <td className={bodyCellClass}>
+                      <select
+                        value={leadAssignments[lead.id] || "Unassigned"}
+                        disabled={!canBulkAssign}
+                        title={!canBulkAssign ? "Only Owner/Admin can assign lead owners." : undefined}
+                        onClick={(event) => event.stopPropagation()}
+                        onChange={(event) =>
+                          setLeadAssignments((prev) => ({
+                            ...prev,
+                            [lead.id]: event.target.value,
+                          }))
+                        }
+                        className="rounded-lg border border-slate-200 px-2.5 py-1 text-xs text-slate-600 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                      >
+                        {assignmentOptions.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8">
+                  <td colSpan={7} className="px-6 py-8">
                     <EmptyState
                       title={emptyState.title}
                       description={emptyState.description}

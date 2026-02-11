@@ -381,3 +381,47 @@ html.dark .shimmer-line::after {
     opacity: 0;
   }
 }
+
+.enterprise-mode .animate-fade-in,
+.enterprise-mode .animate-slide-up,
+.enterprise-mode .animate-scale-in,
+.enterprise-mode .animate-float,
+.enterprise-mode .animate-glow,
+.enterprise-mode .animate-slow-pulse,
+.enterprise-mode .animate-reveal,
+.enterprise-mode .animate-orbit,
+.enterprise-mode .metric-highlight,
+.enterprise-mode .tab-panel-enter {
+  animation: none !important;
+}
+
+.enterprise-mode .reveal,
+.enterprise-mode .reveal-visible {
+  opacity: 1;
+  transform: none;
+  transition: none;
+}
+
+.enterprise-mode .status-dot,
+.enterprise-mode .typing-dot {
+  animation: none !important;
+}
+
+.enterprise-mode .interactive-lift:hover {
+  transform: none;
+  box-shadow: var(--premium-shadow);
+}
+
+.enterprise-mode .rounded-2xl {
+  border-radius: 0.85rem;
+}
+
+.enterprise-mode table th,
+.enterprise-mode table td {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.enterprise-mode .transition {
+  transition-duration: 120ms !important;
+}
