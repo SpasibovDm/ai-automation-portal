@@ -13,6 +13,7 @@ import Leads from "./pages/Leads";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Settings from "./pages/Settings";
+import SystemStatus from "./pages/SystemStatus";
 import Templates from "./pages/Templates";
 
 const LegacyLeadRedirect = () => {
@@ -44,6 +45,7 @@ const App = () => {
         <Route path="emails" element={<Emails />} />
         <Route path="templates" element={<Templates />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="status" element={<SystemStatus />} />
       </Route>
 
       <Route path="/settings" element={<Navigate to="/app/settings" replace />} />
@@ -53,6 +55,7 @@ const App = () => {
       <Route path="/leads/:leadId" element={<LegacyLeadRedirect />} />
       <Route path="/emails" element={<Navigate to="/app/emails" replace />} />
       <Route path="/templates" element={<Navigate to="/app/templates" replace />} />
+      <Route path="/status" element={<Navigate to="/app/status" replace />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

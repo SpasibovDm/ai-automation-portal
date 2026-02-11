@@ -1,13 +1,17 @@
 import React, { useEffect, useMemo, useState } from "react";
 
+import Badge from "../components/Badge";
+import EmptyState from "../components/EmptyState";
 import { ShieldIcon, ToggleLeftIcon } from "../components/Icons";
 import Skeleton from "../components/Skeleton";
 import { useToast } from "../components/ToastContext";
+import { useWorkspace } from "../context/WorkspaceContext";
 import { getCompanySettings, updateCompanySettings, updatePassword } from "../services/api";
 
 const supportEmailKey = "automation-support-email";
 
 const Settings = () => {
+  const { workspace, userRole, can, getPermissionHint } = useWorkspace();
   const [company, setCompany] = useState(null);
   const [formState, setFormState] = useState({
     name: "",
@@ -37,7 +41,6 @@ const Settings = () => {
         name: data.name,
         auto_reply_enabled: data.auto_reply_enabled,
       });
-      localStorage.setItem("automation-company-name", data.name);
     } catch (err) {
       setError("Unable to load company settings.");
     } finally {
@@ -47,7 +50,7 @@ const Settings = () => {
 
   useEffect(() => {
     loadSettings();
-  }, []);
+  }, [workspace.id]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -56,14 +59,15 @@ const Settings = () => {
 
   const handleSave = async (event) => {
     event.preventDefault();
+    if (!can("manage_settings")) {
+      return;
+    }
     setSaving(true);
     setError("");
     try {
       const updated = await updateCompanySettings(formState);
       setCompany(updated);
-      localStorage.setItem("automation-company-name", updated.name);
       localStorage.setItem(supportEmailKey, supportEmail);
-      window.dispatchEvent(new Event("assistant-settings-updated"));
       addToast({
         title: "Settings saved",
         description: "Your company settings were updated.",
@@ -82,6 +86,9 @@ const Settings = () => {
 
   const handlePasswordSubmit = async (event) => {
     event.preventDefault();
+    if (!can("manage_settings")) {
+      return;
+    }
     setPasswordError("");
     if (passwordState.password.length < 8) {
       setPasswordError("Password must be at least 8 characters.");
@@ -113,6 +120,11 @@ const Settings = () => {
         <p className="text-sm text-slate-500 dark:text-slate-400">
           Manage workspace details and automation preferences.
         </p>
+        <div className="mt-3 flex items-center gap-2">
+          <Badge variant="default">{workspace.name}</Badge>
+          <Badge variant="info">Role: {userRole}</Badge>
+          {!can("manage_settings") ? <Badge variant="warning">Read-only</Badge> : null}
+        </div>
       </div>
 
       {loading ? (
@@ -121,7 +133,14 @@ const Settings = () => {
           <Skeleton className="h-32" />
         </div>
       ) : error ? (
-        <div className="text-sm text-red-600">{error}</div>
+        <EmptyState
+          title="Settings unavailable"
+          description={error}
+          impact="Workspace governance controls are required for safe automation at scale."
+          icon={<ShieldIcon className="h-6 w-6" />}
+          actionLabel="Open system status"
+          actionTo="/app/status"
+        />
       ) : (
         <div className="space-y-6">
           <form
@@ -144,6 +163,7 @@ const Settings = () => {
                 name="name"
                 value={formState.name}
                 onChange={handleChange}
+                disabled={!can("manage_settings")}
                 className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
               />
             </div>
@@ -155,6 +175,7 @@ const Settings = () => {
                 name="supportEmail"
                 value={supportEmail}
                 onChange={(event) => setSupportEmail(event.target.value)}
+                disabled={!can("manage_settings")}
                 className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
               />
             </div>
@@ -170,6 +191,7 @@ const Settings = () => {
                 </div>
                 <button
                   type="button"
+                  disabled={!can("manage_settings")}
                   onClick={() =>
                     setFormState((prev) => ({
                       ...prev,
@@ -180,7 +202,7 @@ const Settings = () => {
                     formState.auto_reply_enabled
                       ? "bg-indigo-600"
                       : "bg-slate-300 dark:bg-slate-700"
-                  }`}
+                  } disabled:cursor-not-allowed disabled:opacity-50`}
                 >
                   <span
                     className={`h-5 w-5 rounded-full bg-white shadow transition ${
@@ -204,10 +226,16 @@ const Settings = () => {
             <button
               type="submit"
               className="w-full rounded-xl bg-indigo-600 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-500"
-              disabled={saving}
+              disabled={saving || !can("manage_settings")}
+              title={!can("manage_settings") ? getPermissionHint("manage_settings") : undefined}
             >
               {saving ? "Saving..." : "Save settings"}
             </button>
+            {!can("manage_settings") ? (
+              <p className="text-xs text-slate-400 dark:text-slate-500">
+                {getPermissionHint("manage_settings")}
+              </p>
+            ) : null}
           </form>
 
           <form
@@ -231,6 +259,7 @@ const Settings = () => {
                 type="password"
                 value={passwordState.password}
                 onChange={handlePasswordChange}
+                disabled={!can("manage_settings")}
                 className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
               />
             </div>
@@ -243,6 +272,7 @@ const Settings = () => {
                 type="password"
                 value={passwordState.confirm}
                 onChange={handlePasswordChange}
+                disabled={!can("manage_settings")}
                 className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
               />
             </div>
@@ -250,7 +280,8 @@ const Settings = () => {
             <button
               type="submit"
               className="w-full rounded-xl bg-slate-900 py-2 text-sm font-medium text-white shadow-sm hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100"
-              disabled={passwordSaving}
+              disabled={passwordSaving || !can("manage_settings")}
+              title={!can("manage_settings") ? getPermissionHint("manage_settings") : undefined}
             >
               {passwordSaving ? "Saving..." : "Set password"}
             </button>

@@ -16,7 +16,7 @@ const Button = ({ children, variant = "primary", className = "", type = "button"
   return (
     <button
       type={type}
-      className={`inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 ${styles} ${className}`}
+      className={`inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 disabled:cursor-not-allowed disabled:opacity-50 ${styles} ${className}`}
       {...props}
     >
       {children}

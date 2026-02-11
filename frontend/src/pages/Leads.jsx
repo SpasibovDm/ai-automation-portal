@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import AIExplanationPanel from "../components/AIExplanationPanel";
 import Badge from "../components/Badge";
 import Button from "../components/Button";
 import Drawer from "../components/Drawer";
@@ -8,7 +9,9 @@ import { MailIcon, SearchIcon, UsersIcon } from "../components/Icons";
 import Skeleton from "../components/Skeleton";
 import StatusBadge from "../components/StatusBadge";
 import { useToast } from "../components/ToastContext";
+import { useWorkspace } from "../context/WorkspaceContext";
 import { getLeadEmails, getLeads, getTemplates, updateLeadStatus } from "../services/api";
+import { buildAIExplanation } from "../utils/aiExplainability";
 
 const statusOptions = ["new", "contacted", "qualified", "closed"];
 const dateOptions = [
@@ -19,6 +22,7 @@ const dateOptions = [
 ];
 
 const Leads = () => {
+  const { workspace, userRole, can, getPermissionHint, scopeCollection } = useWorkspace();
   const [leads, setLeads] = useState([]);
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -37,8 +41,9 @@ const Leads = () => {
 
   const emptyState = useMemo(
     () => ({
-      title: "No leads yet",
-      description: "Install the chat widget or connect a form to start receiving leads.",
+      title: "No leads in this workspace",
+      description: "Connect inbox channels to capture demand and auto-prioritize incoming opportunities.",
+      impact: "Without lead capture, high-value prospects can disappear before your team responds.",
     }),
     []
   );
@@ -46,7 +51,7 @@ const Leads = () => {
   const loadLeads = async () => {
     try {
       const data = await getLeads();
-      setLeads(data);
+      setLeads(scopeCollection(data, { min: 1 }));
     } catch (err) {
       setError("Unable to load leads.");
     } finally {
@@ -56,13 +61,13 @@ const Leads = () => {
 
   useEffect(() => {
     loadLeads();
-  }, []);
+  }, [scopeCollection, workspace.id]);
 
   useEffect(() => {
     const loadTemplates = async () => {
       try {
         const data = await getTemplates();
-        setTemplates(data);
+        setTemplates(scopeCollection(data, { min: 1 }));
       } catch (err) {
         setTemplates([]);
       } finally {
@@ -70,9 +75,12 @@ const Leads = () => {
       }
     };
     loadTemplates();
-  }, []);
+  }, [scopeCollection, workspace.id]);
 
   const handleStatusChange = async (leadId, status) => {
+    if (!can("update_lead_status")) {
+      return;
+    }
     try {
       const updated = await updateLeadStatus(leadId, status);
       setLeads((prev) => prev.map((lead) => (lead.id === updated.id ? updated : lead)));
@@ -168,6 +176,21 @@ const Leads = () => {
     loadLeadEmails();
   }, [selectedLead]);
 
+  const selectedLeadExplanation = useMemo(
+    () =>
+      selectedLead
+        ? buildAIExplanation({
+            actionType: "lead score",
+            subject: selectedLead.name,
+            body: selectedLead.message || selectedLead.conversation_summary,
+            category: selectedLead.source,
+            priority: selectedLead.status === "qualified" ? "high" : "medium",
+            baseScore: selectedLead.status === "qualified" ? 78 : 66,
+          })
+        : null,
+    [selectedLead]
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -176,6 +199,10 @@ const Leads = () => {
           <p className="text-sm text-slate-500 dark:text-slate-400">
             Track, prioritize, and route inbound opportunities.
           </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Badge variant="default">{workspace.name}</Badge>
+          <Badge variant="info">Role: {userRole}</Badge>
         </div>
         <div className="flex flex-wrap gap-3">
           <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
@@ -269,6 +296,12 @@ const Leads = () => {
                         <select
                           className="rounded-lg border border-slate-200 px-3 py-1 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                           value={lead.status}
+                          disabled={!can("update_lead_status")}
+                          title={
+                            !can("update_lead_status")
+                              ? getPermissionHint("update_lead_status")
+                              : undefined
+                          }
                           onChange={(event) => handleStatusChange(lead.id, event.target.value)}
                           onClick={(event) => event.stopPropagation()}
                         >
@@ -299,7 +332,10 @@ const Leads = () => {
                     <EmptyState
                       title={emptyState.title}
                       description={emptyState.description}
+                      impact={emptyState.impact}
                       icon={<UsersIcon className="h-6 w-6" />}
+                      actionLabel="Open settings"
+                      actionTo="/app/settings"
                     />
                   </td>
                 </tr>
@@ -364,6 +400,7 @@ const Leads = () => {
                   className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                   value={drawerStatus}
                   onChange={(event) => setDrawerStatus(event.target.value)}
+                  disabled={!can("update_lead_status")}
                 >
                   {statusOptions.map((option) => (
                     <option key={option} value={option}>
@@ -373,6 +410,12 @@ const Leads = () => {
                 </select>
                 <Button
                   variant="secondary"
+                  disabled={!can("update_lead_status")}
+                  title={
+                    !can("update_lead_status")
+                      ? getPermissionHint("update_lead_status")
+                      : undefined
+                  }
                   onClick={() => handleStatusChange(selectedLead.id, drawerStatus)}
                 >
                   Save status
@@ -381,7 +424,18 @@ const Leads = () => {
                   View full profile
                 </Link>
               </div>
+              {!can("update_lead_status") ? (
+                <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
+                  {getPermissionHint("update_lead_status")}
+                </p>
+              ) : null}
             </div>
+
+            <AIExplanationPanel
+              explanation={selectedLeadExplanation}
+              title="Why AI scored this lead"
+              defaultExpanded
+            />
 
             <div className="rounded-2xl border border-slate-100 p-4 dark:border-slate-800">
               <div className="flex items-center justify-between">
@@ -419,9 +473,12 @@ const Leads = () => {
                   ))
                 ) : (
                   <EmptyState
-                    title="No email history"
-                    description="This lead has not replied by email yet."
+                    title="No email history yet"
+                    description="Connect inbox sync so every reply is tracked and scored automatically."
+                    impact="Message history improves lead scoring and response quality."
                     icon={<MailIcon className="h-6 w-6" />}
+                    actionLabel="Open settings"
+                    actionTo="/app/settings"
                   />
                 )}
               </div>

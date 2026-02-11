@@ -5,6 +5,7 @@ import Button from "../components/Button";
 import Card from "../components/Card";
 import EmptyState from "../components/EmptyState";
 import Skeleton from "../components/Skeleton";
+import { useWorkspace } from "../context/WorkspaceContext";
 import { createTemplate, deleteTemplate, getTemplates, updateTemplate } from "../services/api";
 
 const initialFormState = {
@@ -24,6 +25,7 @@ const defaultSample = {
 };
 
 const Templates = () => {
+  const { workspace, userRole, can, getPermissionHint, scopeCollection } = useWorkspace();
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [formState, setFormState] = useState(initialFormState);
@@ -36,7 +38,7 @@ const Templates = () => {
   const loadTemplates = async () => {
     try {
       const data = await getTemplates();
-      setTemplates(data);
+      setTemplates(scopeCollection(data, { min: 1 }));
     } catch (err) {
       setError("Unable to load templates.");
     } finally {
@@ -46,7 +48,7 @@ const Templates = () => {
 
   useEffect(() => {
     loadTemplates();
-  }, []);
+  }, [scopeCollection, workspace.id]);
 
   const openCreate = () => {
     setEditingTemplate(null);
@@ -75,6 +77,9 @@ const Templates = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (!can("manage_templates")) {
+      return;
+    }
     setSaving(true);
     setError("");
     try {
@@ -103,6 +108,9 @@ const Templates = () => {
   };
 
   const handleDelete = async (templateId) => {
+    if (!can("manage_templates")) {
+      return;
+    }
     await deleteTemplate(templateId);
     setTemplates((prev) => prev.filter((item) => item.id !== templateId));
     if (editingTemplate?.id === templateId) {
@@ -162,6 +170,10 @@ const Templates = () => {
             Manage AI reply templates for common scenarios.
           </p>
         </div>
+        <div className="flex items-center gap-2">
+          <Badge variant="default">{workspace.name}</Badge>
+          <Badge variant="info">Role: {userRole}</Badge>
+        </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
             <input
@@ -172,7 +184,13 @@ const Templates = () => {
               className="w-44 bg-transparent text-sm text-slate-600 focus:outline-none dark:text-slate-200"
             />
           </div>
-          <Button onClick={openCreate}>New template</Button>
+          <Button
+            onClick={openCreate}
+            disabled={!can("manage_templates")}
+            title={!can("manage_templates") ? getPermissionHint("manage_templates") : undefined}
+          >
+            New template
+          </Button>
         </div>
       </div>
 
@@ -228,9 +246,14 @@ const Templates = () => {
           ) : (
             <div className="p-6">
               <EmptyState
-                title="No templates yet"
-                description="Create your first AI response template to standardize replies."
+                title="No templates in this workspace"
+                description="Template libraries standardize brand voice and reduce manual rewrite time."
+                impact="Without templates, response quality varies and approvals take longer."
                 icon={<span className="text-xl">+</span>}
+                actionLabel="Create template"
+                onAction={openCreate}
+                actionDisabled={!can("manage_templates")}
+                actionHint={getPermissionHint("manage_templates")}
               />
             </div>
           )}
@@ -250,7 +273,12 @@ const Templates = () => {
               </p>
             </div>
             {editingTemplate ? (
-              <Button variant="danger" onClick={() => handleDelete(editingTemplate.id)}>
+              <Button
+                variant="danger"
+                onClick={() => handleDelete(editingTemplate.id)}
+                disabled={!can("manage_templates")}
+                title={!can("manage_templates") ? getPermissionHint("manage_templates") : undefined}
+              >
                 Delete
               </Button>
             ) : null}
@@ -331,10 +359,19 @@ const Templates = () => {
                   </Badge>
                 ))}
               </div>
-              <Button type="submit" disabled={saving}>
+              <Button
+                type="submit"
+                disabled={saving || !can("manage_templates")}
+                title={!can("manage_templates") ? getPermissionHint("manage_templates") : undefined}
+              >
                 {saving ? "Saving..." : "Save template"}
               </Button>
             </div>
+            {!can("manage_templates") ? (
+              <p className="text-xs text-slate-400 dark:text-slate-500">
+                {getPermissionHint("manage_templates")}
+              </p>
+            ) : null}
           </form>
 
           <div className="mt-8 grid gap-6 lg:grid-cols-2">

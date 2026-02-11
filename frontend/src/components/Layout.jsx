@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect, useMemo, useState } from "react";
+import React, { Fragment, useMemo, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Menu, Transition } from "@headlessui/react";
 import ChatWidget from "./ChatWidget";
@@ -14,12 +14,15 @@ import {
   MoonIcon,
   SearchIcon,
   SettingsIcon,
+  ShieldIcon,
   SunIcon,
   UsersIcon,
 } from "./Icons";
 import { ToastProvider } from "./ToastContext";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
+import { useWorkspace } from "../context/WorkspaceContext";
+import WorkspaceSwitcher from "./WorkspaceSwitcher";
 
 const navGroups = [
   {
@@ -39,7 +42,10 @@ const navGroups = [
   },
   {
     title: "Admin",
-    items: [{ label: "Settings", path: "/app/settings", icon: SettingsIcon }],
+    items: [
+      { label: "Settings", path: "/app/settings", icon: SettingsIcon },
+      { label: "System Status", path: "/app/status", icon: ShieldIcon },
+    ],
   },
 ];
 
@@ -48,29 +54,13 @@ const Layout = () => {
   const location = useLocation();
   const { signOut, user } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { workspace, userRole } = useWorkspace();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [companyName, setCompanyName] = useState(
-    () => localStorage.getItem("automation-company-name") || "Automation Portal"
-  );
 
   const handleLogout = () => {
     signOut();
     navigate("/");
   };
-
-  useEffect(() => {
-    const handleUpdate = () => {
-      setCompanyName(
-        localStorage.getItem("automation-company-name") || "Automation Portal"
-      );
-    };
-    window.addEventListener("storage", handleUpdate);
-    window.addEventListener("assistant-settings-updated", handleUpdate);
-    return () => {
-      window.removeEventListener("storage", handleUpdate);
-      window.removeEventListener("assistant-settings-updated", handleUpdate);
-    };
-  }, []);
 
   const initials = useMemo(() => {
     const email = user?.email || "JD";
@@ -95,6 +85,7 @@ const Layout = () => {
       "/app/templates": "Templates",
       "/app/analytics": "Analytics",
       "/app/settings": "Settings",
+      "/app/status": "System Status",
     };
     return titles[path] || "Dashboard";
   }, [location.pathname]);
@@ -126,7 +117,7 @@ const Layout = () => {
               <p className="text-xs uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
                 Pipeline OS
               </p>
-              <p className="text-base font-semibold">{companyName}</p>
+              <p className="text-base font-semibold">{workspace.name}</p>
             </div>
           </div>
           <nav className="mt-10 space-y-6 text-sm">
@@ -164,7 +155,14 @@ const Layout = () => {
             <p className="font-semibold text-slate-700 dark:text-slate-100">
               Workspace status
             </p>
-            <p className="mt-1">All systems operational · 99.98% uptime</p>
+            <p className="mt-1">All systems operational | 99.98% uptime</p>
+            <button
+              type="button"
+              onClick={() => navigate("/app/status")}
+              className="mt-3 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
+              Open status page
+            </button>
           </div>
         </aside>
         <div className="flex min-h-screen flex-1 flex-col">
@@ -180,17 +178,21 @@ const Layout = () => {
               </button>
               <div>
                 <p className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-slate-500">
-                  {companyName}
+                  {workspace.name}
                 </p>
                 <h1 className="text-lg font-semibold text-slate-900 dark:text-white">
                   {pageTitle}
                 </h1>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Revenue automation workspace
-                </p>
+                <div className="mt-1 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                  <span>Revenue automation workspace</span>
+                  <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                    {userRole}
+                  </span>
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-4">
+              <WorkspaceSwitcher className="hidden md:block" />
               <div className="relative hidden md:flex items-center">
                 <SearchIcon className="absolute left-3 h-4 w-4 text-slate-400 dark:text-slate-500" />
                 <input
@@ -259,6 +261,19 @@ const Layout = () => {
                           }`}
                         >
                           Workspace settings
+                        </button>
+                      )}
+                    </Menu.Item>
+                    <Menu.Item>
+                      {({ active }) => (
+                        <button
+                          type="button"
+                          onClick={() => navigate("/app/status")}
+                          className={`w-full rounded-lg px-3 py-2 text-left ${
+                            active ? "bg-slate-100 dark:bg-slate-800" : ""
+                          }`}
+                        >
+                          System status
                         </button>
                       )}
                     </Menu.Item>

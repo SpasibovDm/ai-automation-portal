@@ -19,6 +19,7 @@ import { BotIcon, ClockIcon, MailIcon, SparklesIcon, UserPlusIcon } from "../com
 import RoleSelector from "../components/RoleSelector";
 import Skeleton from "../components/Skeleton";
 import StatCard from "../components/StatCard";
+import { useWorkspace } from "../context/WorkspaceContext";
 import { useRolePreference } from "../hooks/useRolePreference";
 import { getDashboardSummary } from "../services/api";
 
@@ -30,7 +31,9 @@ const roleHighlights = {
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { workspace, adjustMetric, scopeCollection } = useWorkspace();
   const { role, setRole, roles } = useRolePreference();
+  const onboardingStorageKey = `automation-onboarding-step-${workspace.id}`;
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -39,15 +42,56 @@ const Dashboard = () => {
     if (typeof window === "undefined") {
       return 1;
     }
-    return Number(localStorage.getItem("automation-onboarding-step") || 1);
+    return Number(localStorage.getItem(onboardingStorageKey) || 1);
   });
   const [confetti, setConfetti] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    setOnboardingStep(Number(localStorage.getItem(onboardingStorageKey) || 1));
+  }, [onboardingStorageKey]);
 
   useEffect(() => {
     const loadSummary = async () => {
       try {
         const data = await getDashboardSummary();
-        setSummary(data);
+        const scopedSummary = {
+          ...data,
+          kpis: {
+            ...data.kpis,
+            leads_today: adjustMetric(data?.kpis?.leads_today || 0, { min: 0 }),
+            total_leads: adjustMetric(data?.kpis?.total_leads || 0, { min: 0 }),
+            emails_processed: adjustMetric(data?.kpis?.emails_processed || 0, { min: 0 }),
+            emails_processed_30d: adjustMetric(data?.kpis?.emails_processed_30d || 0, { min: 0 }),
+            ai_replies_sent: adjustMetric(data?.kpis?.ai_replies_sent || 0, { min: 0 }),
+            ai_replies_sent_30d: adjustMetric(data?.kpis?.ai_replies_sent_30d || 0, { min: 0 }),
+            pending_actions: adjustMetric(data?.kpis?.pending_actions || 0, { min: 0 }),
+            leads_generated_30d: adjustMetric(data?.kpis?.leads_generated_30d || 0, { min: 0 }),
+          },
+          charts: {
+            ...data.charts,
+            lead_trend: scopeCollection(data?.charts?.lead_trend || [], { min: 4 }).map((point) => ({
+              ...point,
+              count: adjustMetric(point.count || 0, { min: 0 }),
+            })),
+            email_category_breakdown: scopeCollection(data?.charts?.email_category_breakdown || [], {
+              min: 3,
+            }).map((item) => ({
+              ...item,
+              count: adjustMetric(item.count || 0, { min: 0 }),
+            })),
+            lead_status_funnel: scopeCollection(data?.charts?.lead_status_funnel || [], { min: 3 }).map(
+              (stage) => ({
+                ...stage,
+                count: adjustMetric(stage.count || 0, { min: 0 }),
+              })
+            ),
+          },
+          recent_activity: scopeCollection(data?.recent_activity || [], { min: 5 }),
+        };
+        setSummary(scopedSummary);
         setLastUpdated(new Date());
       } catch (err) {
         setError("Unable to load dashboard summary.");
@@ -56,7 +100,7 @@ const Dashboard = () => {
       }
     };
     loadSummary();
-  }, []);
+  }, [adjustMetric, scopeCollection, workspace.id]);
 
   const leadTrendData = useMemo(() => {
     if (!summary?.charts?.lead_trend) {
@@ -218,7 +262,7 @@ const Dashboard = () => {
   const handleOnboardingAction = () => {
     const nextStep = Math.min(onboardingStep + 1, onboardingSteps.length);
     setOnboardingStep(nextStep);
-    localStorage.setItem("automation-onboarding-step", String(nextStep));
+    localStorage.setItem(onboardingStorageKey, String(nextStep));
     setConfetti(true);
     setTimeout(() => setConfetti(false), 900);
     currentOnboarding.action();
@@ -293,7 +337,10 @@ const Dashboard = () => {
         <EmptyState
           title="Unable to load metrics"
           description={error}
+          impact="Dashboard confidence depends on timely AI and pipeline telemetry."
           icon={<SparklesIcon className="h-6 w-6" />}
+          actionLabel="Open system status"
+          actionTo="/app/status"
         />
       ) : (
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
@@ -374,8 +421,11 @@ const Dashboard = () => {
             ) : (
               <EmptyState
                 title="No lead activity"
-                description="Leads will appear once inbound traffic starts."
+                description="Connect inbound channels to populate lead momentum automatically."
+                impact="Lead trend tracking helps allocate team bandwidth before pipeline bottlenecks."
                 icon={<UserPlusIcon className="h-6 w-6" />}
+                actionLabel="Open settings"
+                actionTo="/app/settings"
               />
             )}
           </div>
@@ -411,8 +461,11 @@ const Dashboard = () => {
             ) : (
               <EmptyState
                 title="No emails yet"
-                description="Once an inbox is connected, categories will populate here."
+                description="Connect inbox providers to classify conversations by category."
+                impact="Category visibility helps route sales and support requests accurately."
                 icon={<MailIcon className="h-6 w-6" />}
+                actionLabel="Connect inbox"
+                actionTo="/app/settings"
               />
             )}
           </div>
@@ -461,8 +514,11 @@ const Dashboard = () => {
             ) : (
               <EmptyState
                 title="No pipeline data"
-                description="Lead stages will appear as you classify inbound requests."
+                description="Lead stages appear after AI scoring and status updates are active."
+                impact="Pipeline health is needed for forecasting and board reporting."
                 icon={<SparklesIcon className="h-6 w-6" />}
+                actionLabel="Open leads"
+                actionTo="/app/leads"
               />
             )}
           </div>
@@ -515,8 +571,11 @@ const Dashboard = () => {
             <div className="mt-6">
               <EmptyState
                 title="No events yet"
-                description="New activity will appear as the team engages leads."
+                description="Team and AI actions will stream here after leads are processed."
+                impact="Transparent activity history improves trust and accountability."
                 icon={<SparklesIcon className="h-6 w-6" />}
+                actionLabel="View inbox"
+                actionTo="/app/emails"
               />
             </div>
           )}
