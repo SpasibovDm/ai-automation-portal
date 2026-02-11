@@ -1,8 +1,14 @@
 import React from "react";
 
-const StatCard = ({ label, value, icon, helper, trend }) => {
+const StatCard = ({ label, value, icon, helper, trend, highlight = false }) => {
   return (
-    <div className="group rounded-2xl border border-slate-100 bg-white p-6 shadow-md transition hover:-translate-y-1 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900/80">
+    <div
+      className={`group rounded-2xl border bg-white p-6 shadow-md transition hover:-translate-y-1 hover:shadow-lg dark:bg-slate-900/80 ${
+        highlight
+          ? "border-indigo-200 shadow-[0_10px_35px_rgba(79,70,229,0.15)] dark:border-indigo-500/40"
+          : "border-slate-100 dark:border-slate-800"
+      }`}
+    >
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{label}</p>
