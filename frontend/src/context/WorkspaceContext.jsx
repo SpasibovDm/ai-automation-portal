@@ -1,6 +1,13 @@
-import React, { createContext, useContext, useMemo, useState } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 const workspaceStorageKey = "automation-workspace-id";
+const consentStoragePrefix = "automation-consent";
+
+const defaultConsent = {
+  aiAssistanceEnabled: true,
+  autoRepliesEnabled: true,
+  manualOverrideEnabled: true,
+};
 
 const workspaceCatalog = [
   {
@@ -74,16 +81,35 @@ const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 const hashString = (value = "") =>
   value.split("").reduce((sum, char, index) => sum + char.charCodeAt(0) * (index + 1), 0);
 
-export const WorkspaceProvider = ({ children }) => {
-  const [workspaceId, setWorkspaceId] = useState(() => {
-    if (typeof window === "undefined") {
-      return workspaceCatalog[0].id;
+const resolveInitialWorkspaceId = () => {
+  if (typeof window === "undefined") {
+    return workspaceCatalog[0].id;
+  }
+  const stored = localStorage.getItem(workspaceStorageKey);
+  return workspaceCatalog.some((workspace) => workspace.id === stored)
+    ? stored
+    : workspaceCatalog[0].id;
+};
+
+const readConsent = (workspaceId) => {
+  if (typeof window === "undefined") {
+    return { ...defaultConsent };
+  }
+  try {
+    const raw = localStorage.getItem(`${consentStoragePrefix}-${workspaceId}`);
+    if (!raw) {
+      return { ...defaultConsent };
     }
-    const stored = localStorage.getItem(workspaceStorageKey);
-    return workspaceCatalog.some((workspace) => workspace.id === stored)
-      ? stored
-      : workspaceCatalog[0].id;
-  });
+    const parsed = JSON.parse(raw);
+    return { ...defaultConsent, ...parsed };
+  } catch (err) {
+    return { ...defaultConsent };
+  }
+};
+
+export const WorkspaceProvider = ({ children }) => {
+  const [workspaceId, setWorkspaceId] = useState(resolveInitialWorkspaceId);
+  const [consent, setConsent] = useState(() => readConsent(resolveInitialWorkspaceId()));
 
   const workspace =
     workspaceCatalog.find((item) => item.id === workspaceId) || workspaceCatalog[0];
@@ -98,6 +124,22 @@ export const WorkspaceProvider = ({ children }) => {
       localStorage.setItem(workspaceStorageKey, candidate.id);
       window.dispatchEvent(new Event("assistant-workspace-updated"));
     }
+  };
+
+  useEffect(() => {
+    setConsent(readConsent(workspaceId));
+  }, [workspaceId]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    localStorage.setItem(`${consentStoragePrefix}-${workspaceId}`, JSON.stringify(consent));
+    window.dispatchEvent(new Event("assistant-consent-updated"));
+  }, [consent, workspaceId]);
+
+  const updateConsent = (key, value) => {
+    setConsent((prev) => ({ ...prev, [key]: value }));
   };
 
   const can = (permission) => {
@@ -146,8 +188,10 @@ export const WorkspaceProvider = ({ children }) => {
       getPermissionHint,
       adjustMetric,
       scopeCollection,
+      consent,
+      updateConsent,
     }),
-    [workspace, workspaceId]
+    [consent, workspace, workspaceId]
   );
 
   return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;

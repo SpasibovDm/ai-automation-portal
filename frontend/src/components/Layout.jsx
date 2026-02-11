@@ -6,6 +6,7 @@ import {
   BellIcon,
   BotIcon,
   ChevronDownIcon,
+  ClockIcon,
   FileTextIcon,
   LayoutDashboardIcon,
   LineChartIcon,
@@ -44,6 +45,8 @@ const navGroups = [
     title: "Admin",
     items: [
       { label: "Settings", path: "/app/settings", icon: SettingsIcon },
+      { label: "Privacy Center", path: "/app/privacy", icon: ShieldIcon },
+      { label: "Audit Logs", path: "/app/audit-logs", icon: ClockIcon },
       { label: "System Status", path: "/app/status", icon: ShieldIcon },
     ],
   },
@@ -54,7 +57,7 @@ const Layout = () => {
   const location = useLocation();
   const { signOut, user } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const { workspace, userRole } = useWorkspace();
+  const { workspace, userRole, consent } = useWorkspace();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const handleLogout = () => {
@@ -85,6 +88,8 @@ const Layout = () => {
       "/app/templates": "Templates",
       "/app/analytics": "Analytics",
       "/app/settings": "Settings",
+      "/app/privacy": "Privacy Center",
+      "/app/audit-logs": "Audit Logs",
       "/app/status": "System Status",
     };
     return titles[path] || "Dashboard";
@@ -189,6 +194,25 @@ const Layout = () => {
                     {userRole}
                   </span>
                 </div>
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
+                  <span
+                    className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 ${
+                      consent.aiAssistanceEnabled
+                        ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200"
+                        : "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200"
+                    }`}
+                  >
+                    <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                    {consent.aiAssistanceEnabled
+                      ? "AI is assisting - human is in control"
+                      : "AI assistance is OFF - manual mode active"}
+                  </span>
+                  <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 dark:border-slate-700 dark:bg-slate-900">
+                    {consent.manualOverrideEnabled
+                      ? "Manual override enabled"
+                      : "Manual override restricted"}
+                  </span>
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -261,6 +285,32 @@ const Layout = () => {
                           }`}
                         >
                           Workspace settings
+                        </button>
+                      )}
+                    </Menu.Item>
+                    <Menu.Item>
+                      {({ active }) => (
+                        <button
+                          type="button"
+                          onClick={() => navigate("/app/privacy")}
+                          className={`w-full rounded-lg px-3 py-2 text-left ${
+                            active ? "bg-slate-100 dark:bg-slate-800" : ""
+                          }`}
+                        >
+                          Privacy center
+                        </button>
+                      )}
+                    </Menu.Item>
+                    <Menu.Item>
+                      {({ active }) => (
+                        <button
+                          type="button"
+                          onClick={() => navigate("/app/audit-logs")}
+                          className={`w-full rounded-lg px-3 py-2 text-left ${
+                            active ? "bg-slate-100 dark:bg-slate-800" : ""
+                          }`}
+                        >
+                          Audit logs
                         </button>
                       )}
                     </Menu.Item>

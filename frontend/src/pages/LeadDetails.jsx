@@ -26,7 +26,7 @@ const statusOptions = ["new", "contacted", "qualified", "closed"];
 const LeadDetails = () => {
   const { leadId } = useParams();
   const { addToast } = useToast();
-  const { workspace, userRole, can, getPermissionHint, scopeCollection } = useWorkspace();
+  const { workspace, userRole, can, getPermissionHint, scopeCollection, consent } = useWorkspace();
 
   const [lead, setLead] = useState(null);
   const [leadLoading, setLeadLoading] = useState(true);
@@ -135,6 +135,29 @@ const LeadDetails = () => {
     [aiReplyPreview, analysis?.category, analysis?.priority, analysis?.summary, lead?.score, selectedEmail?.preview, selectedEmail?.subject]
   );
 
+  const canRegenerateByRole = can("regenerate_reply");
+  const aiAssistanceDisabled = !consent.aiAssistanceEnabled;
+  const autoRepliesDisabled = !consent.autoRepliesEnabled;
+  const regenerateDisabled =
+    !selectedEmailId ||
+    regenerating ||
+    !canRegenerateByRole ||
+    aiAssistanceDisabled ||
+    autoRepliesDisabled;
+  const regenerateHint = !canRegenerateByRole
+    ? getPermissionHint("regenerate_reply")
+    : aiAssistanceDisabled
+      ? "AI assistance is turned off. Enable it in Privacy Center to regenerate drafts."
+      : autoRepliesDisabled
+        ? "Auto-replies are turned off. Enable them to regenerate drafts."
+        : "";
+  const simulatorDisabled = !can("run_simulator") || aiAssistanceDisabled;
+  const simulatorHint = !can("run_simulator")
+    ? getPermissionHint("run_simulator")
+    : aiAssistanceDisabled
+      ? "AI assistance is turned off. Enable it to run what-if simulations."
+      : "";
+
   const timelineEvents = useMemo(() => {
     const events = [];
     if (lead?.created_at) {
@@ -227,7 +250,17 @@ const LeadDetails = () => {
   };
 
   const handleRegenerate = async () => {
-    if (!selectedEmailId || !can("regenerate_reply")) {
+    if (!selectedEmailId || !canRegenerateByRole) {
+      return;
+    }
+    if (aiAssistanceDisabled || autoRepliesDisabled) {
+      addToast({
+        title: "AI reply paused",
+        description: aiAssistanceDisabled
+          ? "AI assistance is off. Enable it in Privacy Center or Settings."
+          : "Auto-replies are off. Enable them to regenerate drafts.",
+        variant: "error",
+      });
       return;
     }
     setRegenerating(true);
@@ -277,6 +310,23 @@ const LeadDetails = () => {
           <Badge variant="info">Role: {userRole}</Badge>
           {lead ? <StatusBadge status={lead.status} /> : null}
         </div>
+      </div>
+
+      <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant={consent.aiAssistanceEnabled ? "success" : "warning"}>
+            AI assistance {consent.aiAssistanceEnabled ? "ON" : "OFF"}
+          </Badge>
+          <Badge variant={consent.autoRepliesEnabled ? "success" : "warning"}>
+            Auto-replies {consent.autoRepliesEnabled ? "ON" : "OFF"}
+          </Badge>
+          <Badge variant={consent.manualOverrideEnabled ? "info" : "warning"}>
+            {consent.manualOverrideEnabled ? "Manual override enabled" : "Manual override restricted"}
+          </Badge>
+        </div>
+        <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+          AI is assisting - human is in control.
+        </p>
       </div>
 
       {leadLoading ? (
@@ -467,8 +517,8 @@ const LeadDetails = () => {
                 <Button
                   variant="subtle"
                   onClick={handleRegenerate}
-                  disabled={!selectedEmailId || regenerating || !can("regenerate_reply")}
-                  title={!can("regenerate_reply") ? getPermissionHint("regenerate_reply") : undefined}
+                  disabled={regenerateDisabled}
+                  title={regenerateHint || undefined}
                 >
                   {regenerating ? "Regenerating..." : "Regenerate AI reply"}
                 </Button>
@@ -476,9 +526,14 @@ const LeadDetails = () => {
               <div className="mt-4 rounded-xl border border-indigo-100 bg-indigo-50 p-4 text-sm text-slate-600 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-100">
                 {analysisLoading ? <Skeleton className="h-20" /> : aiReplyPreview}
               </div>
-              {!can("regenerate_reply") ? (
-                <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">{getPermissionHint("regenerate_reply")}</p>
+              {regenerateHint ? (
+                <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">{regenerateHint}</p>
               ) : null}
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                {consent.manualOverrideEnabled
+                  ? "Manual override enabled: team members can edit the AI suggestion before sending."
+                  : "Manual override restricted: follow approval policy before sending AI replies."}
+              </p>
             </div>
 
             <AIExplanationPanel explanation={explanation} title="Why AI chose this decision" defaultExpanded />
@@ -488,10 +543,10 @@ const LeadDetails = () => {
               leadName={lead.name}
               company={extractCompany(lead)}
               onApply={handleApplySimulation}
-              disabled={!can("run_simulator")}
+              disabled={simulatorDisabled}
             />
-            {!can("run_simulator") ? (
-              <p className="text-xs text-slate-400 dark:text-slate-500">{getPermissionHint("run_simulator")}</p>
+            {simulatorHint ? (
+              <p className="text-xs text-slate-400 dark:text-slate-500">{simulatorHint}</p>
             ) : null}
           </div>
         </div>

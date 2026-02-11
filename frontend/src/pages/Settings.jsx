@@ -11,7 +11,7 @@ import { getCompanySettings, updateCompanySettings, updatePassword } from "../se
 const supportEmailKey = "automation-support-email";
 
 const Settings = () => {
-  const { workspace, userRole, can, getPermissionHint } = useWorkspace();
+  const { workspace, userRole, can, getPermissionHint, consent, updateConsent } = useWorkspace();
   const [company, setCompany] = useState(null);
   const [formState, setFormState] = useState({
     name: "",
@@ -214,6 +214,71 @@ const Settings = () => {
               <div className="mt-3 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                 <ToggleLeftIcon className="h-4 w-4" />
                 {toggledLabel}
+              </div>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900/60">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                    Consent and control
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    AI is assisting - human is in control.
+                  </p>
+                </div>
+                <Badge variant={consent.manualOverrideEnabled ? "success" : "warning"}>
+                  {consent.manualOverrideEnabled ? "Manual override enabled" : "Override restricted"}
+                </Badge>
+              </div>
+              <div className="mt-4 grid gap-3 md:grid-cols-3">
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-900">
+                  <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">AI assistance</p>
+                  <button
+                    type="button"
+                    onClick={() => updateConsent("aiAssistanceEnabled", !consent.aiAssistanceEnabled)}
+                    className={`mt-2 flex h-7 w-12 items-center rounded-full p-1 transition ${
+                      consent.aiAssistanceEnabled ? "bg-indigo-600" : "bg-slate-300 dark:bg-slate-700"
+                    }`}
+                  >
+                    <span
+                      className={`h-5 w-5 rounded-full bg-white transition ${
+                        consent.aiAssistanceEnabled ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-900">
+                  <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Auto-replies</p>
+                  <button
+                    type="button"
+                    onClick={() => updateConsent("autoRepliesEnabled", !consent.autoRepliesEnabled)}
+                    className={`mt-2 flex h-7 w-12 items-center rounded-full p-1 transition ${
+                      consent.autoRepliesEnabled ? "bg-indigo-600" : "bg-slate-300 dark:bg-slate-700"
+                    }`}
+                  >
+                    <span
+                      className={`h-5 w-5 rounded-full bg-white transition ${
+                        consent.autoRepliesEnabled ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-900">
+                  <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Manual override</p>
+                  <button
+                    type="button"
+                    onClick={() => updateConsent("manualOverrideEnabled", !consent.manualOverrideEnabled)}
+                    className={`mt-2 flex h-7 w-12 items-center rounded-full p-1 transition ${
+                      consent.manualOverrideEnabled ? "bg-indigo-600" : "bg-slate-300 dark:bg-slate-700"
+                    }`}
+                  >
+                    <span
+                      className={`h-5 w-5 rounded-full bg-white transition ${
+                        consent.manualOverrideEnabled ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
               </div>
             </div>
             <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 text-xs text-slate-500 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400">
