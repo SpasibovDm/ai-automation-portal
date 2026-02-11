@@ -119,6 +119,75 @@ const Dashboard = () => {
     return configs[role] || configs.Sales;
   }, [role]);
 
+  const roleWorkspace = useMemo(() => {
+    const configs = {
+      Sales: {
+        title: "Sales default widgets",
+        subtitle: "Pipeline velocity, intent score, and next-best actions",
+        widgets: [
+          {
+            label: "High-intent queue",
+            value: "12 leads",
+            detail: "Ready for same-day follow-up",
+          },
+          {
+            label: "Pricing requests",
+            value: "7 threads",
+            detail: "Auto-routed to account executives",
+          },
+          {
+            label: "Reply acceptance",
+            value: "93%",
+            detail: "AI drafts accepted without edits",
+          },
+        ],
+      },
+      Support: {
+        title: "Support default widgets",
+        subtitle: "SLA risk, escalations, and response readiness",
+        widgets: [
+          {
+            label: "SLA risk queue",
+            value: "5 tickets",
+            detail: "Prioritized by urgency and account tier",
+          },
+          {
+            label: "Escalation lane",
+            value: "3 active",
+            detail: "Critical conversations under live watch",
+          },
+          {
+            label: "Auto-resolution",
+            value: "28%",
+            detail: "Resolved through guided AI responses",
+          },
+        ],
+      },
+      Founder: {
+        title: "Founder default widgets",
+        subtitle: "Executive KPIs, governance, and growth signal",
+        widgets: [
+          {
+            label: "Pipeline forecast",
+            value: "$2.4M",
+            detail: "Projected qualified pipeline this quarter",
+          },
+          {
+            label: "AI governance",
+            value: "95%",
+            detail: "Policy-safe replies across teams",
+          },
+          {
+            label: "NRR signal",
+            value: "118%",
+            detail: "Expansion and retention trend",
+          },
+        ],
+      },
+    };
+    return configs[role] || configs.Sales;
+  }, [role]);
+
   const onboardingSteps = useMemo(
     () => [
       {
@@ -130,7 +199,7 @@ const Dashboard = () => {
       {
         title: "Review an AI reply",
         description: "See the reply studio personalize your next response.",
-        actionLabel: "View AI replies",
+        actionLabel: "Click here to see AI reply",
         action: () => navigate("/app/emails"),
       },
       {
@@ -188,7 +257,7 @@ const Dashboard = () => {
               Quick start
             </p>
             <h3 className="mt-2 text-lg font-semibold text-slate-900 dark:text-white">
-              Step {onboardingStep}/3 — {currentOnboarding.title}
+              Step {onboardingStep}/3 - {currentOnboarding.title}
             </h3>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
               {currentOnboarding.description}
@@ -197,7 +266,9 @@ const Dashboard = () => {
           <button
             type="button"
             onClick={handleOnboardingAction}
-            className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100"
+            className={`rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 ${
+              onboardingStep === 2 ? "animate-slow-pulse" : ""
+            }`}
           >
             {currentOnboarding.actionLabel}
           </button>
@@ -206,7 +277,9 @@ const Dashboard = () => {
           <div className="h-2 rounded-full bg-indigo-500" style={{ width: `${progressPercent}%` }} />
         </div>
         <div className="mt-3 text-xs text-slate-500 dark:text-slate-400">
-          Tip: Invite your team once AI replies feel on-brand.
+          {onboardingStep === 2
+            ? "Tip: Click here to see AI reply and review confidence indicators."
+            : "Tip: Invite your team once AI replies feel on-brand."}
         </div>
       </div>
 
@@ -455,23 +528,31 @@ const Dashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-                {roleFocus.title}
+                {roleWorkspace.title}
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Personalized for the {role.toLowerCase()} role
+                {roleWorkspace.subtitle}
               </p>
             </div>
             <Badge variant="info">Role aware</Badge>
           </div>
-          <div className="mt-5 space-y-3">
-            {roleFocus.items.map((item) => (
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            {roleWorkspace.widgets.map((item) => (
               <div
-                key={item}
+                key={item.label}
                 className="rounded-2xl border border-slate-100 bg-slate-50 p-3 text-xs text-slate-600 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-300"
               >
-                {item}
+                <p className="uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                  {item.label}
+                </p>
+                <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{item.value}</p>
+                <p className="mt-1">{item.detail}</p>
               </div>
             ))}
+          </div>
+          <div className="mt-4 rounded-2xl border border-slate-100 bg-white px-4 py-3 text-xs text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+            <p className="font-semibold text-slate-900 dark:text-white">{roleFocus.title}</p>
+            <p className="mt-1">{roleFocus.items[0]}</p>
           </div>
         </div>
         <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-md dark:border-slate-800 dark:bg-slate-900/80">

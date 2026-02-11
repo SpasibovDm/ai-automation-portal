@@ -132,6 +132,23 @@ export const demoRoleData = {
       "AI reply coverage reached 92% today",
       "Outbound sequences boosted qualified pipeline by 18%",
     ],
+    aiPreview: {
+      reply:
+        "Thanks for the pricing request. Based on your 50-seat team, the Growth plan fits best. I can share a tailored proposal and ROI summary.",
+      whyLead: "Enterprise intent keywords, multi-seat volume, and short evaluation timeline.",
+      whyReply: "Model selected pricing guidance with confident but consultative tone profile.",
+      confidence: [
+        { label: "Tone", value: 92 },
+        { label: "Intent", value: 89 },
+        { label: "Urgency", value: 79 },
+      ],
+    },
+    settingsPreview: {
+      automationRule: "Route pricing and procurement threads directly to account executive pods.",
+      tone: 76,
+      workingHours: ["Mon-Fri", "9:00-18:00", "Sales timezone sync"],
+      sensitivity: 72,
+    },
   },
   Support: {
     summary: {
@@ -237,6 +254,23 @@ export const demoRoleData = {
       "SLA coverage improved to 96.4%",
       "Escalations reduced by 12% week-over-week",
     ],
+    aiPreview: {
+      reply:
+        "Thanks for flagging this issue. We activated the incident workflow and prioritized your account. I'll provide updates every 15 minutes until recovery is confirmed.",
+      whyLead: "Outage language, account tier, and SLA-risk pattern increased urgency score.",
+      whyReply: "Incident-response template selected to maximize clarity and reassurance.",
+      confidence: [
+        { label: "Tone", value: 90 },
+        { label: "Intent", value: 95 },
+        { label: "Urgency", value: 97 },
+      ],
+    },
+    settingsPreview: {
+      automationRule: "Escalate outage, billing, and security requests to priority support lane.",
+      tone: 68,
+      workingHours: ["24/7 queue", "Pager alerts", "Escalation handoff"],
+      sensitivity: 84,
+    },
   },
   Founder: {
     summary: {
@@ -337,5 +371,22 @@ export const demoRoleData = {
       "AI handles 74% of inbound volume",
       "Average response time reduced to 6 min",
     ],
+    aiPreview: {
+      reply:
+        "Appreciate the executive request. Attached is the summary covering automation ROI, response-time gains, and governance controls. Happy to walk through assumptions live.",
+      whyLead: "Executive sender profile and strategic expansion language triggered founder-priority routing.",
+      whyReply: "Board-ready response template selected with compliance-safe phrasing.",
+      confidence: [
+        { label: "Tone", value: 94 },
+        { label: "Intent", value: 90 },
+        { label: "Urgency", value: 74 },
+      ],
+    },
+    settingsPreview: {
+      automationRule: "Require approval for legal, board, and policy-sensitive outbound replies.",
+      tone: 82,
+      workingHours: ["Global coverage", "Exec alerts", "Board reporting"],
+      sensitivity: 63,
+    },
   },
 };
