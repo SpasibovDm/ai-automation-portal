@@ -12,6 +12,7 @@ import {
   SunIcon,
   UserPlusIcon,
 } from "../components/Icons";
+import ChatWidget from "../components/ChatWidget";
 import Reveal from "../components/Reveal";
 import RoleSelector from "../components/RoleSelector";
 import { useTheme } from "../context/ThemeContext";
@@ -940,6 +941,7 @@ const Landing = () => {
           </section>
         </Reveal>
       </main>
+      <ChatWidget />
     </div>
   );
 };

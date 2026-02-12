@@ -12,7 +12,8 @@ const initialMessages: ChatMessage[] = [
   {
     id: "welcome",
     role: "assistant",
-    content: "Hi! How can I help you today?",
+    content:
+      "Hi! I can show you how AI Automation Portal automates inbox triage, lead scoring, and AI replies. Ask how it helps your business.",
   },
 ];
 
@@ -22,6 +23,34 @@ const brandColorKey = "automation-brand-color";
 const assistantSettingsEvent = "assistant-settings-updated";
 
 const emailRegex = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i;
+const noNetworkFallback =
+  "I can still help while the server reconnects. AI Automation Portal automates inbox triage, prioritizes leads, and drafts on-brand replies so teams respond faster and close more deals.";
+
+const getInstantReply = (message: string): string | null => {
+  const normalized = message.toLowerCase().trim();
+
+  if (
+    normalized.includes("what does this product do") ||
+    normalized.includes("what does this do") ||
+    normalized.includes("what is this")
+  ) {
+    return "AI Automation Portal combines inbox automation, lead management, AI replies, and analytics in one dashboard so your team can move from inbound message to action in minutes.";
+  }
+
+  if (
+    normalized.includes("how does this help my business") ||
+    normalized.includes("help my business") ||
+    normalized.includes("business value")
+  ) {
+    return "It helps your business by reducing response time, recovering high-value leads, and improving conversion with consistent AI-assisted follow-ups. Most teams save hours per week while improving pipeline quality.";
+  }
+
+  if (normalized.includes("demo")) {
+    return "Use Try demo to explore a fully interactive workspace with sample inbox, leads, and analytics data. No sign-up needed.";
+  }
+
+  return null;
+};
 
 const ChatWidget: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -156,14 +185,41 @@ const ChatWidget: React.FC = () => {
     };
     setLeadInfo(nextLead);
 
+    const instantReply = getInstantReply(trimmed);
+    if (instantReply) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `${Date.now()}-assistant-instant`,
+          role: "assistant",
+          content: instantReply,
+        },
+      ]);
+      if (!nextLead.email && !leadPrompted) {
+        setLeadPrompted(true);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `${Date.now()}-assistant-followup`,
+            role: "assistant",
+            content: "If you want a tailored ROI walkthrough, share your name and email anytime.",
+          },
+        ]);
+      }
+      setIsSending(false);
+      setTimeout(scrollToBottom, 100);
+      return;
+    }
+
     try {
       const response = await sendChatMessage(trimmed);
+      const reply = response?.reply?.trim() || noNetworkFallback;
       setMessages((prev) => [
         ...prev,
         {
           id: `${Date.now()}-assistant`,
           role: "assistant",
-          content: response.reply,
+          content: reply,
         },
       ]);
 
@@ -181,22 +237,34 @@ const ChatWidget: React.FC = () => {
 
       if (nextLead.email && !leadSubmitted) {
         const name = nextLead.name || "Website Visitor";
-        await createChatLead({
-          name,
-          email: nextLead.email,
-          message: nextLead.message,
-          company: nextLead.company || undefined,
-          language,
-        });
-        setLeadSubmitted(true);
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: `${Date.now()}-assistant-confirm`,
-            role: "assistant",
-            content: `Thanks! We’ll follow up at ${nextLead.email}.`,
-          },
-        ]);
+        try {
+          await createChatLead({
+            name,
+            email: nextLead.email,
+            message: nextLead.message,
+            company: nextLead.company || undefined,
+            language,
+          });
+          setLeadSubmitted(true);
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `${Date.now()}-assistant-confirm`,
+              role: "assistant",
+              content: `Thanks! We’ll follow up at ${nextLead.email}.`,
+            },
+          ]);
+        } catch {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `${Date.now()}-assistant-lead-fallback`,
+              role: "assistant",
+              content:
+                "I couldn’t submit your details just now. You can still continue in demo mode or use Get started free.",
+            },
+          ]);
+        }
       }
     } catch (error) {
       setMessages((prev) => [
@@ -204,9 +272,19 @@ const ChatWidget: React.FC = () => {
         {
           id: `${Date.now()}-assistant-error`,
           role: "assistant",
-          content: "Sorry, I ran into an issue. Please try again in a moment.",
+          content: noNetworkFallback,
         },
       ]);
+      if (nextLead.email && !leadSubmitted) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `${Date.now()}-assistant-error-followup`,
+            role: "assistant",
+            content: "If you want immediate access, click Get started free and activate your workspace.",
+          },
+        ]);
+      }
     } finally {
       setIsSending(false);
       setTimeout(scrollToBottom, 100);
