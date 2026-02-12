@@ -99,6 +99,19 @@ Supports:
 - Nginx reverse proxy
 - IONOS-style VM hosting
 
+Quick production start:
+
+```bash
+cp .env.prod.example .env.prod
+docker compose -f docker-compose.prod.yml up --build -d
+```
+
+Production artifacts:
+- `Dockerfile.backend`
+- `Dockerfile.frontend`
+- `docker-compose.prod.yml`
+- `deploy/nginx/production.conf`
+
 ## Architecture
 
 See [ARCHITECTURE.md](ARCHITECTURE.md).

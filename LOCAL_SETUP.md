@@ -19,6 +19,9 @@ cd ai-automation-portal
 cp .env.example .env
 ```
 
+Use `.env` for local development.
+Use `.env.prod` only for `docker-compose.prod.yml`.
+
 ## 2) Start backend (FastAPI)
 
 ```bash
@@ -69,6 +72,14 @@ If you have Redis available:
 
 ```bash
 celery -A app.tasks worker --loglevel=info
+```
+
+## 7) Optional: run production stack locally (Docker)
+
+```bash
+cp .env.prod.example .env.prod
+docker compose -f docker-compose.prod.yml up --build -d
+docker compose -f docker-compose.prod.yml ps
 ```
 
 ## Troubleshooting
