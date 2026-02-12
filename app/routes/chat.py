@@ -7,10 +7,11 @@ from app.schemas.chat import ChatLeadCreate, ChatMessageRequest, ChatMessageResp
 from app.services.auto_reply import trigger_auto_reply
 from app.services.chat_ai import generate_ai_reply
 
-router = APIRouter(prefix="/api/chat", tags=["chat"])
+router = APIRouter(tags=["chat"])
 
 
-@router.post("/message", response_model=ChatMessageResponse)
+@router.post("/chat/message", response_model=ChatMessageResponse)
+@router.post("/api/chat/message", response_model=ChatMessageResponse, include_in_schema=False)
 @limiter.limit("30/minute")
 def chat_message(
     payload: ChatMessageRequest,
@@ -20,7 +21,8 @@ def chat_message(
     return ChatMessageResponse(reply=reply)
 
 
-@router.post("/lead", status_code=status.HTTP_201_CREATED)
+@router.post("/chat/lead", status_code=status.HTTP_201_CREATED)
+@router.post("/api/chat/lead", status_code=status.HTTP_201_CREATED, include_in_schema=False)
 @limiter.limit("20/minute")
 def chat_lead(
     payload: ChatLeadCreate,

@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { MoonIcon, SunIcon } from "../components/Icons";
+import { getErrorMessage } from "../utils/httpError";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -25,7 +26,7 @@ const Login = () => {
       await signIn(formState.email, formState.password);
       navigate("/dashboard");
     } catch (err) {
-      setError("Login failed. Please check your credentials.");
+      setError(getErrorMessage(err, "Login failed. Please check your credentials."));
     } finally {
       setLoading(false);
     }

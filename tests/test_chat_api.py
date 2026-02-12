@@ -23,6 +23,15 @@ def test_chat_message_returns_reply(monkeypatch) -> None:
     assert "reply" in response.json()
 
 
+def test_chat_message_alias_returns_reply(monkeypatch) -> None:
+    client = _create_client(monkeypatch, "./test_chat_alias.db")
+
+    response = client.post("/chat/message", json={"message": "Hello there"})
+
+    assert response.status_code == 200
+    assert "reply" in response.json()
+
+
 def test_chat_lead_creates_lead(monkeypatch) -> None:
     client = _create_client(monkeypatch, "./test_chat_lead.db")
 

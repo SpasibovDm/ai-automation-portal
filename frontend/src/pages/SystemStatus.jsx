@@ -6,6 +6,7 @@ import Skeleton from "../components/Skeleton";
 import { BotIcon, ClockIcon, MailIcon, SparklesIcon } from "../components/Icons";
 import { useWorkspace } from "../context/WorkspaceContext";
 import { getCompanySettings, getEmailIntegrationStatus } from "../services/api";
+import { getErrorMessage } from "../utils/httpError";
 
 const relativeTime = (timestamp) => {
   const parsed = new Date(timestamp).getTime();
@@ -38,6 +39,7 @@ const SystemStatus = () => {
   const [loading, setLoading] = useState(true);
   const [integration, setIntegration] = useState(null);
   const [company, setCompany] = useState(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const load = async () => {
@@ -48,9 +50,11 @@ const SystemStatus = () => {
         ]);
         setIntegration(integrationStatus);
         setCompany(companySettings);
+        setError("");
       } catch (err) {
         setIntegration(null);
         setCompany(null);
+        setError(getErrorMessage(err, "Unable to load live status signals."));
       } finally {
         setLoading(false);
       }
@@ -139,6 +143,11 @@ const SystemStatus = () => {
         </div>
       ) : (
         <>
+          {error ? (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+              {error}
+            </div>
+          ) : null}
           <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
             {healthCards.map((card) => {
               const Icon = card.icon;

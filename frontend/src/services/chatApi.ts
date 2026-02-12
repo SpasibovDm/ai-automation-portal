@@ -1,10 +1,4 @@
-import axios from "axios";
-
-const baseURL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
-
-const chatApi = axios.create({
-  baseURL,
-});
+import api from "./api";
 
 export type ChatLeadPayload = {
   name: string;
@@ -15,11 +9,11 @@ export type ChatLeadPayload = {
 };
 
 export const sendChatMessage = async (message: string) => {
-  const response = await chatApi.post("/api/chat/message", { message });
+  const response = await api.post("/chat/message", { message });
   return response.data as { reply: string };
 };
 
 export const createChatLead = async (payload: ChatLeadPayload) => {
-  const response = await chatApi.post("/api/chat/lead", payload);
+  const response = await api.post("/chat/lead", payload);
   return response.data as { id: number };
 };

@@ -24,6 +24,7 @@ import StatCard from "../components/StatCard";
 import { useWorkspace } from "../context/WorkspaceContext";
 import { useRolePreference } from "../hooks/useRolePreference";
 import { getDashboardSummary } from "../services/api";
+import { getErrorMessage } from "../utils/httpError";
 
 const roleHighlights = {
   Sales: ["leads_today", "ai_replies_sent"],
@@ -96,7 +97,7 @@ const Dashboard = () => {
         setSummary(scopedSummary);
         setLastUpdated(new Date());
       } catch (err) {
-        setError("Unable to load dashboard summary.");
+        setError(getErrorMessage(err, "Unable to load dashboard summary."));
       } finally {
         setLoading(false);
       }

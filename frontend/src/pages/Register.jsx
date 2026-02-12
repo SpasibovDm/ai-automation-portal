@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { MoonIcon, SunIcon } from "../components/Icons";
+import { getErrorMessage } from "../utils/httpError";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -23,7 +24,7 @@ const Register = () => {
       setSent(true);
       setTimeout(() => navigate("/dashboard"), 800);
     } catch (err) {
-      setError("We could not send the magic link. Try again.");
+      setError(getErrorMessage(err, "We could not send the magic link. Try again."));
     } finally {
       setLoading(false);
     }

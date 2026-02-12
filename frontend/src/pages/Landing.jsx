@@ -307,6 +307,24 @@ const featureCards = [
   },
 ];
 
+const audienceCards = [
+  {
+    role: "Sales teams",
+    pain: "High-intent opportunities hide in crowded inboxes.",
+    value: "Prioritized lead scoring and AI drafts reduce time-to-first-reply.",
+  },
+  {
+    role: "Support teams",
+    pain: "Urgent issues get mixed with low-priority requests.",
+    value: "AI routing and confidence indicators protect SLAs and reduce escalations.",
+  },
+  {
+    role: "Founders and leaders",
+    pain: "Revenue and service risk are hard to see in real time.",
+    value: "Unified analytics make automation impact and team performance measurable.",
+  },
+];
+
 const Landing = () => {
   const { theme, toggleTheme } = useTheme();
   const { role, setRole, roles } = useRolePreference();
@@ -459,6 +477,9 @@ const Landing = () => {
             <p className="mt-5 max-w-2xl text-base text-slate-600 dark:text-slate-300 md:text-lg">
               AI Automation Portal helps sales and support teams convert faster with explainable automation, live inbox intelligence, and role-aware operations.
             </p>
+            <div className="mt-5 inline-flex rounded-2xl border border-rose-100 bg-rose-50 px-4 py-2 text-xs text-rose-800 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-100">
+              Problem: your inbox is chaos. High-value leads and urgent customer threads get lost.
+            </div>
 
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <Link
@@ -557,6 +578,35 @@ const Landing = () => {
             </div>
           </div>
         </section>
+
+        <Reveal>
+          <section className="mx-auto max-w-7xl px-6 py-6 lg:px-8">
+            <div className="rounded-3xl border border-slate-200 bg-white/85 p-6 shadow-premium dark:border-slate-800 dark:bg-slate-900/75">
+              <p className="text-xs uppercase tracking-[0.28em] text-slate-400 dark:text-slate-500">
+                Who it is for
+              </p>
+              <h2 className="font-display mt-2 text-2xl font-semibold text-slate-900 dark:text-white md:text-3xl">
+                Built for teams that must respond fast and prove business impact
+              </h2>
+              <div className="mt-6 grid gap-4 md:grid-cols-3">
+                {audienceCards.map((item) => (
+                  <article
+                    key={item.role}
+                    className="rounded-2xl border border-slate-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/50"
+                  >
+                    <p className="text-sm font-semibold text-slate-900 dark:text-white">{item.role}</p>
+                    <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                      <span className="font-semibold text-slate-700 dark:text-slate-200">Pain:</span> {item.pain}
+                    </p>
+                    <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                      <span className="font-semibold text-slate-700 dark:text-slate-200">Value:</span> {item.value}
+                    </p>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </section>
+        </Reveal>
 
         <Reveal>
           <section className="mx-auto max-w-7xl px-6 py-6 lg:px-8">
