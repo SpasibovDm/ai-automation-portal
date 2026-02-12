@@ -479,6 +479,9 @@ const Landing = () => {
                 Sign in
               </Link>
             </div>
+            <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+              Try demo works instantly with no sign-up.
+            </p>
 
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <p className="text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-slate-500">Preview role</p>

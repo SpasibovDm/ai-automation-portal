@@ -29,7 +29,6 @@ import {
 } from "../components/Icons";
 import { useTheme } from "../context/ThemeContext";
 import { demoRoleData } from "../data/demoData";
-import { useRolePreference } from "../hooks/useRolePreference";
 
 const roleHighlights = {
   Sales: ["leads_today", "ai_replies_sent"],
@@ -44,6 +43,7 @@ const roleDefaultTabs = {
   Support: "Inbox",
   Founder: "Analytics",
 };
+const demoRoles = ["Sales", "Support", "Founder"];
 
 const roleWorkspace = {
   Sales: {
@@ -98,7 +98,7 @@ const onboardingFlow = [
 
 const Demo = () => {
   const { theme, toggleTheme } = useTheme();
-  const { role, setRole, roles } = useRolePreference();
+  const [role, setRole] = useState("Sales");
   const [activeTab, setActiveTab] = useState(roleDefaultTabs[role] || workspaceTabs[0]);
   const [onboardingStep, setOnboardingStep] = useState(1);
   const [confetti, setConfetti] = useState(false);
@@ -175,7 +175,7 @@ const Demo = () => {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <RoleSelector roles={roles} value={role} onChange={setRole} className="hidden lg:inline-flex" />
+            <RoleSelector roles={demoRoles} value={role} onChange={setRole} className="hidden lg:inline-flex" />
             <Link
               className="hidden rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 md:inline-flex"
               to="/"
@@ -186,7 +186,7 @@ const Demo = () => {
               className="interactive-lift rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500"
               to="/register"
             >
-              Activate workspace
+              Get started free
             </Link>
             <button
               type="button"
@@ -205,17 +205,31 @@ const Demo = () => {
           <div className="relative overflow-hidden rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-amber-800 shadow-sm dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
             <ConfettiBurst active={confetti} />
             <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <Badge variant="warning">Demo mode</Badge>
-                <p className="text-sm font-medium">
-                  No backend calls in this preview. Everything here is mock and interactive.
-                </p>
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <Badge variant="warning">Demo mode</Badge>
+                  <p className="text-sm font-medium">
+                    Explore the full product flow with mock inbox, leads, and analytics.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2 text-[11px]">
+                  <span className="rounded-full border border-amber-200 bg-amber-100 px-2 py-1 dark:border-amber-500/30 dark:bg-amber-500/20">
+                    No data saving
+                  </span>
+                  <span className="rounded-full border border-amber-200 bg-amber-100 px-2 py-1 dark:border-amber-500/30 dark:bg-amber-500/20">
+                    No settings persistence
+                  </span>
+                  <span className="rounded-full border border-amber-200 bg-amber-100 px-2 py-1 dark:border-amber-500/30 dark:bg-amber-500/20">
+                    No external integrations
+                  </span>
+                </div>
               </div>
+              <p className="text-xs font-medium">No backend writes in this preview</p>
               <Link
                 className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-500"
                 to="/register"
               >
-                Connect inbox
+                Get started free
               </Link>
             </div>
           </div>
@@ -258,7 +272,7 @@ const Demo = () => {
                 <h2 className="font-display text-2xl font-semibold text-slate-900 dark:text-white">{workspaceData.title}</h2>
                 <p className="text-sm text-slate-500 dark:text-slate-400">{workspaceData.subtitle}</p>
               </div>
-              <RoleSelector roles={roles} value={role} onChange={setRole} className="lg:hidden" />
+              <RoleSelector roles={demoRoles} value={role} onChange={setRole} className="lg:hidden" />
             </div>
 
             <div className="mt-5 inline-flex rounded-full border border-slate-200 bg-white/80 p-1 text-xs shadow-sm dark:border-slate-700 dark:bg-slate-900/70">
