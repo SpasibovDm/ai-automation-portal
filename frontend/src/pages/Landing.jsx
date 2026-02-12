@@ -283,6 +283,29 @@ const trustSignals = [
   "Production-grade retry and fallback flows",
 ];
 
+const featureCards = [
+  {
+    title: "Inbox automation",
+    description: "Capture, classify, and route conversations without manual triage.",
+    icon: MailIcon,
+  },
+  {
+    title: "Leads pipeline",
+    description: "Score, prioritize, and assign high-intent leads in real time.",
+    icon: UserPlusIcon,
+  },
+  {
+    title: "AI replies",
+    description: "Generate explainable drafts with confidence and urgency indicators.",
+    icon: SparklesIcon,
+  },
+  {
+    title: "Analytics",
+    description: "Track response speed, conversion impact, and automation reliability.",
+    icon: LineChartIcon,
+  },
+];
+
 const Landing = () => {
   const { theme, toggleTheme } = useTheme();
   const { role, setRole, roles } = useRolePreference();
@@ -409,7 +432,7 @@ const Landing = () => {
               className="interactive-lift rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500"
               to="/register"
             >
-              Get started
+              Get started free
             </Link>
             <button
               type="button"
@@ -430,16 +453,19 @@ const Landing = () => {
               AI-native workspace for sales, support, and founders
             </p>
             <h1 className="font-display mt-5 text-4xl font-semibold leading-tight text-slate-900 dark:text-white md:text-5xl lg:text-6xl">
-              Your inbox is chaos.
-              <span className="block text-indigo-600 dark:text-indigo-300">
-                High-value leads get lost.
-              </span>
+              Automate inbox, manage leads, and reply with AI — in one dashboard.
             </h1>
             <p className="mt-5 max-w-2xl text-base text-slate-600 dark:text-slate-300 md:text-lg">
-              AI Automation Portal prioritizes, replies, and tracks every conversation with explainable AI. The result is faster revenue cycles, fewer missed escalations, and confident teams.
+              AI Automation Portal helps sales and support teams convert faster with explainable automation, live inbox intelligence, and role-aware operations.
             </p>
 
             <div className="mt-7 flex flex-wrap items-center gap-3">
+              <Link
+                className="interactive-lift inline-flex items-center justify-center rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500"
+                to="/register"
+              >
+                Get started free
+              </Link>
               <Link
                 className="interactive-lift inline-flex items-center justify-center rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
                 to="/demo"
@@ -448,9 +474,9 @@ const Landing = () => {
               </Link>
               <Link
                 className="interactive-lift inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white/90 px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-white dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-                to="/register"
+                to="/login"
               >
-                Get started
+                Sign in
               </Link>
             </div>
 
@@ -527,6 +553,36 @@ const Landing = () => {
             </div>
           </div>
         </section>
+
+        <Reveal>
+          <section className="mx-auto max-w-7xl px-6 py-6 lg:px-8">
+            <div className="rounded-3xl border border-slate-200 bg-white/85 p-6 shadow-premium dark:border-slate-800 dark:bg-slate-900/75">
+              <p className="text-xs uppercase tracking-[0.28em] text-slate-400 dark:text-slate-500">
+                Features
+              </p>
+              <h2 className="font-display mt-2 text-2xl font-semibold text-slate-900 dark:text-white md:text-3xl">
+                Premium workflow surface for modern B2B teams
+              </h2>
+              <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                {featureCards.map((feature) => {
+                  const Icon = feature.icon;
+                  return (
+                    <article
+                      key={feature.title}
+                      className="interactive-lift rounded-2xl border border-slate-100 bg-white p-4 dark:border-slate-800 dark:bg-slate-900/70"
+                    >
+                      <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-200">
+                        <Icon className="h-4 w-4" />
+                      </span>
+                      <p className="mt-3 text-sm font-semibold text-slate-900 dark:text-white">{feature.title}</p>
+                      <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{feature.description}</p>
+                    </article>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+        </Reveal>
 
         <Reveal>
           <section className="mx-auto max-w-7xl px-6 py-10 lg:px-8">
@@ -768,7 +824,7 @@ const Landing = () => {
             </div>
 
             <div className="rounded-3xl border border-slate-200 bg-slate-900 p-6 text-white shadow-premium dark:border-slate-700">
-              <p className="text-xs uppercase tracking-[0.28em] text-indigo-200">Proof and trust</p>
+              <p className="text-xs uppercase tracking-[0.28em] text-indigo-200">Security & Trust</p>
               <h3 className="font-display mt-2 text-2xl font-semibold">Built for teams that cannot miss signal</h3>
               <p className="mt-2 text-sm text-indigo-100">
                 Every action is explainable, every workflow is governable, and every stakeholder sees role-specific outcomes.
@@ -874,7 +930,7 @@ const Landing = () => {
                   className="interactive-lift inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500"
                   to="/register"
                 >
-                  Get started
+                  Get started free
                 </Link>
               </div>
             </div>
