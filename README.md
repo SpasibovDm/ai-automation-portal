@@ -1,37 +1,57 @@
 # AI Automation Portal
 
-AI Automation Portal is a demo-ready SaaS workspace for AI-assisted inbox operations, lead qualification, and explainable automation.
+AI Automation Portal is a premium-style B2B SaaS demo for inbox automation, lead management, and AI-assisted replies.
 
-It is built as a full-stack project:
-- Backend: FastAPI + SQLAlchemy
-- Frontend: React + Vite + Tailwind CSS
-- Local-first workflow with no Docker requirement
+## Why this project
 
-## What this project demonstrates
+This repository is designed to feel like a production SaaS product, not a developer prototype.
 
-- Public SaaS landing page as the default entry (`/`)
-- Interactive product preview with role-aware demo data
-- Explainable AI UX (confidence, reasons, and action visibility)
-- Workspace, role, privacy, audit, and system status surfaces
-- Clean backend API structure with predictable local setup
+- Public marketing landing page at `/` (no login wall)
+- Frictionless demo mode at `/demo` (no signup required)
+- Authenticated workspace with protected routes under `/app/*`
+- AI chat widget on the landing page for product discovery
+- Role-aware dashboard surfaces for Sales, Support, and Founder workflows
 
-## Repository structure
+## Core capabilities
 
-```text
-/app        FastAPI backend (routes, services, models, schemas)
-/frontend   React + Tailwind frontend (pages, components, context)
-/docs       Architecture and local setup documentation
-/scripts    Helper scripts for local/prod startup
-```
+- Inbox automation previews with explainable AI decisions
+- Lead scoring and prioritization workflows
+- AI reply suggestions with confidence indicators
+- Analytics blocks focused on business outcomes
+- Privacy, audit, and system status views for trust
 
-## Screenshots
+## Demo mode
 
-![Dashboard](docs/screenshots/dashboard.svg)
-![Inbox](docs/screenshots/inbox.svg)
+The demo is intentionally frontend-only and safe:
 
-## Quick start (no Docker)
+- Mock inbox, leads, and analytics data
+- No real data saving
+- No settings persistence
+- No external integrations
 
-### 1) Backend
+Open `/demo` and click `Try demo` from the landing page.
+
+## Routes
+
+### Public
+
+- `/` landing page
+- `/demo` demo mode
+- `/login` sign in
+- `/register` get started free
+
+### Protected
+
+- `/dashboard` (alias to authenticated dashboard)
+- `/inbox` (alias)
+- `/ai-templates` (alias)
+- `/app/*` full workspace
+
+Unauthenticated users are redirected to `/login` for protected routes.
+
+## Local setup (no Docker)
+
+### Backend
 
 ```bash
 python3 -m venv .venv
@@ -41,10 +61,7 @@ cp .env.example .env
 uvicorn app.main:app --reload
 ```
 
-Backend runs at [http://127.0.0.1:8000](http://127.0.0.1:8000).
-Open API docs at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs).
-
-### 2) Frontend
+### Frontend
 
 ```bash
 cd frontend
@@ -53,35 +70,20 @@ cp .env.example .env
 npm run dev
 ```
 
-Frontend runs at [http://127.0.0.1:5173](http://127.0.0.1:5173).
+Open:
 
-## App entry points
+- Frontend: `http://127.0.0.1:5173`
+- API docs: `http://127.0.0.1:8000/docs`
 
-- `/` public landing page (no login wall)
-- `/demo` interactive demo preview
-- `/login` sign-in page
-- `/register` get-started free page
-- `/dashboard` authenticated dashboard entry
-- `/app/*` authenticated workspace
-- `/inbox` authenticated inbox alias
-- `/ai-templates` authenticated template alias
+## Documentation
 
-## Environment defaults
+- `ARCHITECTURE.md`
+- `LOCAL_SETUP.md`
+- `docs/ARCHITECTURE.md`
+- `docs/LOCAL_SETUP.md`
 
-The provided `.env.example` is configured for local development:
-- SQLite database (`sqlite:///./app.db`)
-- Local Redis URL (`redis://localhost:6379/0`)
-- Local frontend origins for CORS
+## Notes
 
-## Additional documentation
-
-- Architecture overview: `ARCHITECTURE.md` (canonical copy in `docs/ARCHITECTURE.md`)
-- Local setup guide: `LOCAL_SETUP.md` (canonical copy in `docs/LOCAL_SETUP.md`)
-
-## Optional Docker flow
-
-Docker files are kept for convenience, but local development does not require Docker.
-
-```bash
-docker compose up --build
-```
+- No payment flows are included.
+- API contracts remain unchanged.
+- Docker files remain optional for teams that prefer containerized workflows.

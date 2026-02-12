@@ -40,7 +40,7 @@ class Settings(BaseSettings):
             return []
         if isinstance(value, str):
             parsed: list[str]
-            raw = value.strip().replace(";", ",")
+            raw = value.strip().replace(";", ",").replace("\n", ",")
             if not raw:
                 return []
             if raw.startswith("["):
