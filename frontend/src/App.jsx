@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useParams } from "react-router-dom";
 
 import Layout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AIAgents from "./pages/AIAgents";
 import Analytics from "./pages/Analytics";
 import Dashboard from "./pages/Dashboard";
 import Demo from "./pages/Demo";
@@ -43,6 +44,7 @@ const App = () => {
       >
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
+        <Route path="agents" element={<AIAgents />} />
         <Route path="analytics" element={<Analytics />} />
         <Route path="leads" element={<Leads />} />
         <Route path="leads/:leadId" element={<LeadDetails />} />
@@ -58,6 +60,7 @@ const App = () => {
 
       <Route path="/settings" element={<Navigate to="/app/settings" replace />} />
       <Route path="/dashboard" element={<Navigate to="/app/dashboard" replace />} />
+      <Route path="/agents" element={<Navigate to="/app/agents" replace />} />
       <Route path="/analytics" element={<Navigate to="/app/analytics" replace />} />
       <Route path="/leads" element={<Navigate to="/app/leads" replace />} />
       <Route path="/leads/:leadId" element={<LegacyLeadRedirect />} />

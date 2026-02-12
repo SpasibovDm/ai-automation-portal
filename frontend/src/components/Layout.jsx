@@ -32,6 +32,7 @@ const navGroups = [
     title: "Workspace",
     items: [
       { label: "Dashboard", path: "/app/dashboard", icon: LayoutDashboardIcon },
+      { label: "AI Agents", path: "/app/agents", icon: BotIcon },
       { label: "Analytics", path: "/app/analytics", icon: LineChartIcon },
       { label: "Workflow Builder", path: "/app/workflows", icon: ToggleLeftIcon },
       { label: "Value Story", path: "/app/pitch-story", icon: SparklesIcon },
@@ -96,6 +97,7 @@ const Layout = () => {
     }
     const titles = {
       "/app/dashboard": "Dashboard",
+      "/app/agents": "AI Agents",
       "/app/leads": "Leads",
       "/app/emails": "Emails",
       "/app/templates": "Templates",
@@ -404,6 +406,19 @@ const Layout = () => {
                           }`}
                         >
                           View profile
+                        </button>
+                      )}
+                    </Menu.Item>
+                    <Menu.Item>
+                      {({ active }) => (
+                        <button
+                          type="button"
+                          onClick={() => navigate("/app/agents")}
+                          className={`w-full rounded-lg px-3 py-2 text-left ${
+                            active ? "bg-slate-100 dark:bg-slate-800" : ""
+                          }`}
+                        >
+                          AI agents
                         </button>
                       )}
                     </Menu.Item>
