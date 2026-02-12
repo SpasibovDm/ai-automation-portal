@@ -20,7 +20,12 @@ def generate_ai_reply(prompt: str, model: str | None = None) -> str:
     headers = {"Authorization": f"Bearer {settings.ai_api_key}"}
     url = f"{settings.ai_base_url.rstrip('/')}/chat/completions"
     try:
-        response = httpx.post(url, json=payload, headers=headers, timeout=30)
+        response = httpx.post(
+            url,
+            json=payload,
+            headers=headers,
+            timeout=settings.ai_request_timeout_seconds,
+        )
         response.raise_for_status()
         data = response.json()
         return data["choices"][0]["message"]["content"].strip()

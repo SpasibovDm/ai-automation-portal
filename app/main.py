@@ -47,6 +47,7 @@ configure_logging()
 
 app = FastAPI(title=settings.app_name)
 app.state.limiter = limiter
+app.state.started_at = time.time()
 app.add_exception_handler(
     RateLimitExceeded,
     lambda r, e: JSONResponse(status_code=429, content={"detail": "Rate limit exceeded"}),
@@ -70,11 +71,10 @@ async def validation_exception_handler(_: Request, exc: RequestValidationError) 
         content={"detail": "Validation failed", "errors": errors},
     )
 app.add_middleware(SlowAPIMiddleware)
-allow_all_origins = "*" in settings.allowed_origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"] if allow_all_origins else settings.allowed_origins,
-    allow_credentials=not allow_all_origins,
+    allow_origins=["*"] if settings.cors_allow_all else settings.allowed_origins,
+    allow_credentials=not settings.cors_allow_all,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -111,7 +111,13 @@ async def error_handling_middleware(request: Request, call_next: Callable):
                 "duration_ms": round(duration * 1000, 2),
             },
         )
-        return JSONResponse(status_code=500, content={"detail": "Internal server error"})
+        return JSONResponse(
+            status_code=500,
+            content={
+                "detail": "Internal server error. Contact support with the request ID.",
+                "request_id": request_id,
+            },
+        )
 
 if settings.sentry_dsn:
     sentry_sdk.init(dsn=settings.sentry_dsn, environment=settings.sentry_environment)
@@ -137,4 +143,15 @@ def root() -> dict:
 
 @app.get("/health")
 def health() -> dict:
-    return {"status": "healthy"}
+    return {"status": "healthy", "environment": settings.environment}
+
+
+@app.get("/status")
+def status() -> dict:
+    uptime_seconds = max(0, int(time.time() - app.state.started_at))
+    return {
+        "status": "operational",
+        "app": settings.app_name,
+        "environment": settings.environment,
+        "uptime_seconds": uptime_seconds,
+    }

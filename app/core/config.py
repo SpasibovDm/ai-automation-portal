@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     )
 
     app_name: str = "Business Automation Portal"
+    environment: str = "development"
     secret_key: str = "change-this-secret"
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 60
@@ -29,9 +30,20 @@ class Settings(BaseSettings):
     ai_base_url: str = "https://api.openai.com/v1"
     ai_api_key: str = "change-this-key"
     ai_default_model: str = "gpt-4o-mini"
+    ai_request_timeout_seconds: float = 30.0
+    api_host: str = "0.0.0.0"
+    api_port: int = 8000
     sentry_dsn: str = ""
     sentry_environment: str = "development"
     allowed_origins: list[str] = list(DEFAULT_ALLOWED_ORIGINS)
+
+    @field_validator("environment", mode="before")
+    @classmethod
+    def normalize_environment(cls, value: str | None) -> str:
+        normalized = (value or "development").strip().lower()
+        if normalized not in {"development", "staging", "production", "test"}:
+            raise ValueError("ENVIRONMENT must be one of: development, staging, production, test")
+        return normalized
 
     @field_validator("allowed_origins", mode="before")
     @classmethod
@@ -53,7 +65,7 @@ class Settings(BaseSettings):
                         raise ValueError("ALLOWED_ORIGINS must be a list or comma-separated string")
                     parsed = [str(item) for item in decoded]
             else:
-                parsed = raw.split(",")
+                parsed = raw.replace(" ", ",").split(",")
             return cls._normalize_origins(parsed)
         return cls._normalize_origins(value)
 
@@ -73,9 +85,17 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def ensure_default_origins(self) -> "Settings":
         if self.allowed_origins:
+            if self.environment in {"production", "staging"} and self.secret_key == "change-this-secret":
+                raise ValueError("Set a secure SECRET_KEY before running in staging/production.")
             return self
         self.allowed_origins = list(DEFAULT_ALLOWED_ORIGINS)
+        if self.environment in {"production", "staging"} and self.secret_key == "change-this-secret":
+            raise ValueError("Set a secure SECRET_KEY before running in staging/production.")
         return self
+
+    @property
+    def cors_allow_all(self) -> bool:
+        return "*" in self.allowed_origins
 
 
 settings = Settings()

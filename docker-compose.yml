@@ -6,22 +6,39 @@ services:
     container_name: automation-api
     env_file:
       - .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg2://postgres:postgres@db:5432/automation}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}
+      API_HOST: 0.0.0.0
+      API_PORT: 8000
+      RUN_MIGRATIONS: ${RUN_MIGRATIONS:-true}
     ports:
       - "8000:8000"
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8000/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+    restart: unless-stopped
 
   frontend:
     build:
       context: ./frontend
       args:
-        - VITE_API_URL=http://localhost:8000
+        VITE_API_URL: http://localhost:8000
     container_name: automation-frontend
     ports:
       - "5173:80"
     depends_on:
-      - api
+      api:
+        condition: service_healthy
+    restart: unless-stopped
 
   db:
     image: postgres:16
@@ -32,12 +49,19 @@ services:
       POSTGRES_PASSWORD: postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d automation"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
     container_name: automation-redis
     ports:
       - "6379:6379"
+    restart: unless-stopped
 
   worker:
     build: .
@@ -45,9 +69,16 @@ services:
     command: celery -A app.tasks worker --loglevel=info
     env_file:
       - .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg2://postgres:postgres@db:5432/automation}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      RUN_MIGRATIONS: "false"
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
 
 volumes:
   postgres_data:
