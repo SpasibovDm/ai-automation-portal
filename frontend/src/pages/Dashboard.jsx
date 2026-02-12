@@ -278,13 +278,13 @@ const Dashboard = () => {
         title: "Review an AI reply",
         description: "See the reply studio personalize your next response.",
         actionLabel: "Click here to see AI reply",
-        action: () => navigate("/app/emails"),
+        action: () => navigate("/app/inbox"),
       },
       {
         title: "Create your templates",
         description: "Align tone, intent, and escalation rules.",
         actionLabel: "Open templates",
-        action: () => navigate("/app/templates"),
+        action: () => navigate("/app/ai-templates"),
       },
     ],
     [navigate]
@@ -632,7 +632,7 @@ const Dashboard = () => {
                 impact="Transparent activity history improves trust and accountability."
                 icon={<SparklesIcon className="h-6 w-6" />}
                 actionLabel="View inbox"
-                actionTo="/app/emails"
+                actionTo="/app/inbox"
               />
             </div>
           )}

@@ -21,7 +21,7 @@ const Register = () => {
     try {
       await signInWithMagicLink(email);
       setSent(true);
-      setTimeout(() => navigate("/app/dashboard"), 800);
+      setTimeout(() => navigate("/dashboard"), 800);
     } catch (err) {
       setError("We could not send the magic link. Try again.");
     } finally {

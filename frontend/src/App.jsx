@@ -48,7 +48,9 @@ const App = () => {
         <Route path="analytics" element={<Analytics />} />
         <Route path="leads" element={<Leads />} />
         <Route path="leads/:leadId" element={<LeadDetails />} />
+        <Route path="inbox" element={<Emails />} />
         <Route path="emails" element={<Emails />} />
+        <Route path="ai-templates" element={<Templates />} />
         <Route path="templates" element={<Templates />} />
         <Route path="settings" element={<Settings />} />
         <Route path="privacy" element={<PrivacyCenter />} />
@@ -64,7 +66,9 @@ const App = () => {
       <Route path="/analytics" element={<Navigate to="/app/analytics" replace />} />
       <Route path="/leads" element={<Navigate to="/app/leads" replace />} />
       <Route path="/leads/:leadId" element={<LegacyLeadRedirect />} />
+      <Route path="/inbox" element={<Navigate to="/app/inbox" replace />} />
       <Route path="/emails" element={<Navigate to="/app/emails" replace />} />
+      <Route path="/ai-templates" element={<Navigate to="/app/ai-templates" replace />} />
       <Route path="/templates" element={<Navigate to="/app/templates" replace />} />
       <Route path="/privacy" element={<Navigate to="/app/privacy" replace />} />
       <Route path="/audit-logs" element={<Navigate to="/app/audit-logs" replace />} />

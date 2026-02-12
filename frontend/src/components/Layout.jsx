@@ -29,27 +29,22 @@ import WorkspaceSwitcher from "./WorkspaceSwitcher";
 
 const navGroups = [
   {
-    title: "Workspace",
+    title: "Core",
     items: [
       { label: "Dashboard", path: "/app/dashboard", icon: LayoutDashboardIcon },
-      { label: "AI Agents", path: "/app/agents", icon: BotIcon },
+      { label: "Inbox", path: "/app/inbox", icon: MailIcon },
+      { label: "Leads", path: "/app/leads", icon: UsersIcon },
+      { label: "AI Templates", path: "/app/ai-templates", icon: FileTextIcon },
       { label: "Analytics", path: "/app/analytics", icon: LineChartIcon },
+      { label: "Settings", path: "/app/settings", icon: SettingsIcon },
+    ],
+  },
+  {
+    title: "Advanced",
+    items: [
+      { label: "AI Agents", path: "/app/agents", icon: BotIcon },
       { label: "Workflow Builder", path: "/app/workflows", icon: ToggleLeftIcon },
       { label: "Value Story", path: "/app/pitch-story", icon: SparklesIcon },
-    ],
-  },
-  {
-    title: "Engagement",
-    items: [
-      { label: "Leads", path: "/app/leads", icon: UsersIcon },
-      { label: "Emails", path: "/app/emails", icon: MailIcon },
-      { label: "Templates", path: "/app/templates", icon: FileTextIcon },
-    ],
-  },
-  {
-    title: "Admin",
-    items: [
-      { label: "Settings", path: "/app/settings", icon: SettingsIcon },
       { label: "Privacy Center", path: "/app/privacy", icon: ShieldIcon },
       { label: "Audit Logs", path: "/app/audit-logs", icon: ClockIcon },
       { label: "System Status", path: "/app/status", icon: ShieldIcon },
@@ -99,8 +94,10 @@ const Layout = () => {
       "/app/dashboard": "Dashboard",
       "/app/agents": "AI Agents",
       "/app/leads": "Leads",
-      "/app/emails": "Emails",
-      "/app/templates": "Templates",
+      "/app/inbox": "Inbox",
+      "/app/emails": "Inbox",
+      "/app/ai-templates": "AI Templates",
+      "/app/templates": "AI Templates",
       "/app/analytics": "Analytics",
       "/app/workflows": "Workflow Builder",
       "/app/pitch-story": "Value Story",
@@ -355,7 +352,7 @@ const Layout = () => {
                 <SearchIcon className="absolute left-3 h-4 w-4 text-slate-400 dark:text-slate-500" />
                 <input
                   type="search"
-                  placeholder="Search leads, emails, templates"
+                  placeholder="Search leads, inbox, templates"
                   className="w-64 rounded-full border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm text-slate-600 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                 />
               </div>
