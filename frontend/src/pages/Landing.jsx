@@ -409,7 +409,7 @@ const Landing = () => {
               className="interactive-lift rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500"
               to="/register"
             >
-              Activate workspace
+              Get started
             </Link>
             <button
               type="button"
@@ -450,7 +450,7 @@ const Landing = () => {
                 className="interactive-lift inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white/90 px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-white dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
                 to="/register"
               >
-                Activate workspace
+                Get started
               </Link>
             </div>
 
@@ -857,7 +857,7 @@ const Landing = () => {
             <div className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-premium dark:border-slate-800 dark:bg-slate-900/80">
               <div>
                 <p className="font-display text-xl font-semibold text-slate-900 dark:text-white">
-                  Ready to activate your workspace?
+                  Ready to launch your workspace?
                 </p>
                 <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
                   Try demo, validate AI decisions, and launch your team in production.
@@ -874,7 +874,7 @@ const Landing = () => {
                   className="interactive-lift inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500"
                   to="/register"
                 >
-                  Activate workspace
+                  Get started
                 </Link>
               </div>
             </div>

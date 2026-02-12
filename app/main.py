@@ -51,6 +51,8 @@ app.add_exception_handler(
     RateLimitExceeded,
     lambda r, e: JSONResponse(status_code=429, content={"detail": "Rate limit exceeded"}),
 )
+
+
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(_: Request, exc: RequestValidationError) -> JSONResponse:
     errors = []
@@ -68,10 +70,11 @@ async def validation_exception_handler(_: Request, exc: RequestValidationError) 
         content={"detail": "Validation failed", "errors": errors},
     )
 app.add_middleware(SlowAPIMiddleware)
+allow_all_origins = "*" in settings.allowed_origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.allowed_origins,
-    allow_credentials=True,
+    allow_origins=["*"] if allow_all_origins else settings.allowed_origins,
+    allow_credentials=not allow_all_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
