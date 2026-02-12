@@ -1,51 +1,115 @@
 # Architecture Overview
 
-## Stack
+## 1. System Summary
 
-- Frontend: React + Vite + Tailwind (`frontend/`)
-- Backend: FastAPI + SQLAlchemy (`app/`)
-- Optional async: Redis + Celery
-- Local DB default: SQLite (`app.db`)
+AI Automation Portal is a monorepo SaaS application with a clear frontend/backend split.
 
-## Product surfaces
+```text
+Browser (React SPA)
+    |
+    v
+FastAPI API (routes -> services -> models/schemas)
+    |
+    v
+SQLite (local) / PostgreSQL (production)
+    |
+    v
+Redis + Celery (optional async/background)
+```
 
-- Public landing (`/`) with SaaS storytelling and CTA flow
-- Public demo (`/demo`) with mock operational data
-- Auth flow (`/login`, `/register`)
-- Protected app shell (`/app/*`) plus aliases (`/dashboard`, `/inbox`, `/ai-templates`)
+## 2. Repository Structure
 
-## Frontend architecture
+- `app/` FastAPI backend
+- `frontend/` React + Tailwind frontend
+- `docs/` project docs and assets
+- `scripts/` runtime helper scripts
+- `tests/` backend tests
 
-- `frontend/src/pages`: route-level views (Landing, Demo, Dashboard, Leads, etc.)
-- `frontend/src/components`: reusable UI primitives and feature modules
-- `frontend/src/context`: auth, theme, workspace state
-- `frontend/src/services`: API adapters
-- `frontend/src/data`: mock/demo datasets
+## 3. Frontend Architecture
 
-### UX patterns
+### Routing model
 
-- Public-first entry (no auth required to understand value)
-- Protected routes for operational workspace
-- Role-aware rendering for Sales, Support, Founder
-- Skeletons, empty states, badges, and toast feedback for SaaS-grade UX
-- Persisted dark/light theme
+- Public pages:
+  - `/` marketing landing
+  - `/demo` product demo with mock data
+  - `/login`
+  - `/register`
+- Auth-only pages:
+  - `/app/*` (dashboard, inbox, leads, templates, analytics, settings, trust pages)
+- Route aliases (`/dashboard`, `/inbox`, etc.) redirect into protected `/app/*` routes.
 
-## Backend architecture
+### Frontend layers
 
-- `app/routes`: API endpoints and request handling
-- `app/services`: domain logic
-- `app/models`: SQLAlchemy models
-- `app/schemas`: API payload models
-- `app/core`: config, database, security, middleware, logging
+- `frontend/src/pages/` route-level screens
+- `frontend/src/components/` reusable UI modules
+- `frontend/src/context/` global app state (auth/theme/workspace)
+- `frontend/src/hooks/` UI behavior hooks
+- `frontend/src/services/` API and chat clients
+- `frontend/src/data/` mock/demo datasets
+- `frontend/src/utils/` shared utility functions
 
-### Config and runtime
+### UX principles implemented
 
-- Environment-driven settings via `pydantic-settings`
-- Robust `ALLOWED_ORIGINS` parsing for local CORS safety
-- No API contract changes introduced by frontend/product polish
+- Public-first SaaS entry with clear value proposition
+- Demo-first onboarding path with no registration friction
+- Loading states (skeletons), empty states, and human-readable error messages
+- Role-aware and workspace-aware rendering
+- Persistent theme toggle (light/dark)
 
-## Trust and demo strategy
+## 4. Backend Architecture
 
-- Demo mode is frontend-only and does not write business data
-- AI chat widget is available on landing with graceful fallback messaging
-- Privacy, audit, and status pages are included in app shell for enterprise trust narrative
+### Backend layers
+
+- `app/routes/`: HTTP layer, request validation, response models
+- `app/services/`: business logic and orchestration
+- `app/models/`: SQLAlchemy ORM models
+- `app/schemas/`: Pydantic request/response contracts
+- `app/core/`: settings, DB session, middleware, security, logging
+
+### Runtime concerns
+
+- Config from environment using `pydantic-settings`
+- CORS origin parsing supports comma, semicolon, newline, and JSON list formats
+- Request middleware emits request ID and structured logs
+- Validation errors returned in a UI-friendly structure
+- Health endpoints:
+  - `/health`
+  - `/status`
+
+### API stability
+
+- Existing routes remain compatible.
+- Chat API now supports both:
+  - `/api/chat/*` (legacy)
+  - `/chat/*` (clean alias)
+
+## 5. Data and State
+
+### Backend persistence
+
+- Local default: SQLite (`app.db`)
+- Production target: PostgreSQL
+- Async optional: Redis-backed Celery workers
+
+### Frontend state
+
+- Auth state: token/session in local storage
+- Workspace state: active workspace, role permissions, UI modes
+- Consent state: AI-assistance and automation toggles
+
+## 6. Deployment View
+
+- API container: FastAPI + Alembic migrations on startup (configurable)
+- Frontend container: static Vite build served by Nginx
+- Compose stacks:
+  - `docker-compose.yml` for local containerized run
+  - `docker-compose.prod.yml` for production baseline
+- External reverse proxy (Nginx) is supported for VPS deployments
+
+## 7. Quality and Trust Surfaces
+
+- Privacy Center
+- Audit logs (read-only visual)
+- System status view
+- Explainable AI rationale blocks
+- Role/permission-aware UI controls
