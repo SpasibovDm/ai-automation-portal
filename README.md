@@ -60,8 +60,11 @@ Frontend runs at [http://127.0.0.1:5173](http://127.0.0.1:5173).
 - `/` public landing page (no login wall)
 - `/demo` interactive demo preview
 - `/login` sign-in page
-- `/register` get-started page
+- `/register` get-started free page
+- `/dashboard` authenticated dashboard entry
 - `/app/*` authenticated workspace
+- `/inbox` authenticated inbox alias
+- `/ai-templates` authenticated template alias
 
 ## Environment defaults
 
@@ -72,8 +75,8 @@ The provided `.env.example` is configured for local development:
 
 ## Additional documentation
 
-- Architecture overview: `docs/ARCHITECTURE.md`
-- Local setup guide: `docs/LOCAL_SETUP.md`
+- Architecture overview: `ARCHITECTURE.md` (canonical copy in `docs/ARCHITECTURE.md`)
+- Local setup guide: `LOCAL_SETUP.md` (canonical copy in `docs/LOCAL_SETUP.md`)
 
 ## Optional Docker flow
 

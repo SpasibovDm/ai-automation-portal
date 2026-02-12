@@ -3,6 +3,11 @@ import json
 from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+DEFAULT_ALLOWED_ORIGINS = (
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+)
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -26,19 +31,16 @@ class Settings(BaseSettings):
     ai_default_model: str = "gpt-4o-mini"
     sentry_dsn: str = ""
     sentry_environment: str = "development"
-    allowed_origins: list[str] = [
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ]
+    allowed_origins: list[str] = list(DEFAULT_ALLOWED_ORIGINS)
 
     @field_validator("allowed_origins", mode="before")
     @classmethod
-    def split_origins(cls, value: str | list[str] | None) -> list[str]:
+    def split_origins(cls, value: str | list[str] | tuple[str, ...] | None) -> list[str]:
         if value is None:
             return []
         if isinstance(value, str):
             parsed: list[str]
-            raw = value.strip()
+            raw = value.strip().replace(";", ",")
             if not raw:
                 return []
             if raw.startswith("["):
@@ -72,10 +74,7 @@ class Settings(BaseSettings):
     def ensure_default_origins(self) -> "Settings":
         if self.allowed_origins:
             return self
-        self.allowed_origins = [
-            "http://localhost:5173",
-            "http://127.0.0.1:5173",
-        ]
+        self.allowed_origins = list(DEFAULT_ALLOWED_ORIGINS)
         return self
 
 

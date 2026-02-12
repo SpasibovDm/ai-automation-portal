@@ -54,6 +54,7 @@ The repository keeps existing API endpoints stable while improving internals (se
 - Public-first SaaS entry at `/`
 - Auth routes are explicit (`/login`, `/register`) and linked from landing CTAs
 - Protected workspace lives under `/app/*`
+- Convenience aliases route to protected views (`/dashboard`, `/inbox`, `/ai-templates`)
 - Demo mode and role-aware UI flows are frontend-driven with mockable state
 
 ## Cross-cutting concerns

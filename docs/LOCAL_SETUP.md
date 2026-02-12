@@ -49,8 +49,9 @@ Frontend URL: [http://127.0.0.1:5173](http://127.0.0.1:5173)
 ## 3) Verify app flow
 
 - Open `/` and confirm landing page is public.
-- Use `Sign in` or `Get started` from landing navigation.
+- Use `Sign in` or `Get started free` from landing navigation.
 - Open `/demo` to inspect interactive product preview.
+- Sign in and confirm `/dashboard` resolves to the protected app shell.
 
 ## 4) Optional background workers (Celery)
 
