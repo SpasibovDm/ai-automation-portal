@@ -16,3 +16,18 @@ def test_root(monkeypatch) -> None:
 
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
+
+
+def test_health(monkeypatch) -> None:
+    monkeypatch.setenv("DATABASE_URL", "sqlite:///./test_health.db")
+    monkeypatch.setenv("SECRET_KEY", "test-secret")
+
+    from app import main
+
+    importlib.reload(main)
+    client = TestClient(main.app)
+
+    response = client.get("/health")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}

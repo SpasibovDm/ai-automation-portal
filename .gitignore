@@ -2,6 +2,7 @@
 .env
 .env.*
 !.env.example
+!.env.prod.example
 
 # Python
 .venv/
@@ -23,9 +24,16 @@ app.db
 *.db
 *.sqlite3
 *.log
+postgres_data/
+redis_data/
 
 # OS and editor files
 .DS_Store
 Thumbs.db
 .idea/
 .vscode/
+
+# Build artifacts
+dist/
+build/
+coverage/

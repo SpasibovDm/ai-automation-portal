@@ -143,7 +143,7 @@ def root() -> dict:
 
 @app.get("/health")
 def health() -> dict:
-    return {"status": "healthy", "environment": settings.environment}
+    return {"status": "ok"}
 
 
 @app.get("/status")
